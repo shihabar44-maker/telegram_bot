@@ -10,25 +10,24 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # /help
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
-        "🔹 Available Commands:\n"
+        "📌 Available Commands:\n"
         "/start - Bot চালু করো\n"
         "/help - সাহায্য নাও\n"
         "/about - Bot সম্পর্কে জানো\n"
-        "/ping - Bot ঠিক আছে কিনা দেখো"
+        "/ping - Bot ঠিক আছে কিনা চেক করো"
     )
 
 # /about
 async def about(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("🤖 আমি একটা Telegram Bot, Python দিয়ে বানানো!")
+    await update.message.reply_text("🤖 আমি তোমার তৈরি করা একটি Telegram Bot!")
 
 # /ping
 async def ping(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("✅ Bot চলছে!")
+    await update.message.reply_text("✅ Bot ঠিকমতো কাজ করছে!")
 
 def main():
     app = Application.builder().token(TOKEN).build()
 
-    # শুধু কমান্ডগুলো কাজ করবে
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("help", help_command))
     app.add_handler(CommandHandler("about", about))
