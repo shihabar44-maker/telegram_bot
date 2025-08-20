@@ -1,39 +1,33 @@
-from telegram import Update
-from telegram.ext import Application, CommandHandler, ContextTypes
+from telegram.ext import Updater, CommandHandler
 
-TOKEN = "8386188290:AAFA_-VB0LzomH46cXeWEg6OwJP8qNSPzOc"
+# ---------- Command Functions ----------
+def start(update, context):
+    update.message.reply_text('⚡ "একটা কমান্ড দিলেই উত্তর তোমার হাতে — এই হলো আমার Telegram Bot!"')
 
-# /start
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("আমার নিজের হাতে তৈরি একটি ছোট্ট সহকারী 🤖 — সবসময় প্রস্তুত তোমার কাজে সাহায্য করার জন্য!")
+def about(update, context):
+    update.message.reply_text('🤖 "আমার নিজের হাতে তৈরি একটি ছোট্ট সহকারী — সবসময় প্রস্তুত তোমার কাজে সাহায্য করার জন্য!"')
 
-# /help
-async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "📌 Available Commands:\n"
-        "/start - Bot চালু করো\n"
-        "/help - সাহায্য নাও\n"
-        "/about - Bot সম্পর্কে জানো\n"
-        "/ping - Bot ঠিক আছে কিনা চেক করো"
-    )
+def help_command(update, context):
+    update.message.reply_text('🛠 "আমি একটা সহকারী Telegram Bot। আমি আপনাকে কীভাবে সাহায্য করতে পারি?"')
 
-# /about
-async def about(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("🤖 আমি তোমার তৈরি করা একটি Telegram Bot!")
+def tips(update, context):
+    update.message.reply_text('💡 "আমার সম্পর্কে আরো জানতে চাইলে এই লিংকে ক্লিক করুন: https://t.me/sr_sadiya_official"')
 
-# /ping
-async def ping(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("✅ Bot ঠিকমতো কাজ করছে!")
-
+# ---------- Main Function ----------
 def main():
-    app = Application.builder().token(TOKEN).build()
+    TOKEN = "8386188290:AAFA_-VB0LzomH46cXeWEg6OwJP8qNSPzOc"   # এখানে তোমার BotFather থেকে পাওয়া টোকেন বসাবে
 
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("help", help_command))
-    app.add_handler(CommandHandler("about", about))
-    app.add_handler(CommandHandler("ping", ping))
+    updater = Updater(TOKEN, use_context=True)
+    dp = updater.dispatcher
 
-    app.run_polling()
+    # Command Handlers
+    dp.add_handler(CommandHandler("start", start))
+    dp.add_handler(CommandHandler("about", about))
+    dp.add_handler(CommandHandler("help", help_command))
+    dp.add_handler(CommandHandler("tips", tips))
+
+    updater.start_polling()
+    updater.idle()
 
 if __name__ == "__main__":
     main()
