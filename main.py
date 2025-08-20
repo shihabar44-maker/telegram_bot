@@ -1,33 +1,34 @@
-from telegram.ext import Updater, CommandHandler
+from telegram import Update
+from telegram.ext import Application, CommandHandler, ContextTypes
 
-# ---------- Command Functions ----------
-def start(update, context):
-    update.message.reply_text('⚡ "একটা কমান্ড দিলেই উত্তর তোমার হাতে — এই হলো আমার Telegram Bot!"')
+TOKEN = "8386188290:AAFA_-VB0LzomH46cXeWEg6OwJP8qNSPzOc"
 
-def about(update, context):
-    update.message.reply_text('🤖 "আমার নিজের হাতে তৈরি একটি ছোট্ট সহকারী — সবসময় প্রস্তুত তোমার কাজে সাহায্য করার জন্য!"')
+# /start command
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("⚡ একটা কমান্ড দিলেই উত্তর তোমার হাতে — এই হলো আমার Telegram Bot!")
 
-def help_command(update, context):
-    update.message.reply_text('🛠 "আমি একটা সহকারী Telegram Bot। আমি আপনাকে কীভাবে সাহায্য করতে পারি?"')
+# /about command
+async def about(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("আমার নিজের হাতে তৈরি একটি ছোট্ট সহকারী — সবসময় প্রস্তুত তোমার কাজে সাহায্য করার জন্য!")
 
-def tips(update, context):
-    update.message.reply_text('💡 "আমার সম্পর্কে আরো জানতে চাইলে এই লিংকে ক্লিক করুন: https://t.me/sr_sadiya_official"')
+# /help command
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("আমি একটা সহকারী Telegram Bot 🧑‍💻 আমি আপনাকে কীভাবে সাহায্য করতে পারি?")
 
-# ---------- Main Function ----------
+# /tips command
+async def tips(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("আমার সম্পর্কে আরো জানতে চাইলে 👉 https://t.me/sr_sadiya_official এই লিংকে ক্লিক করুন!")
+
 def main():
-    TOKEN = "8386188290:AAFA_-VB0LzomH46cXeWEg6OwJP8qNSPzOc"   # এখানে তোমার BotFather থেকে পাওয়া টোকেন বসাবে
+    app = Application.builder().token(TOKEN).build()
 
-    updater = Updater(TOKEN, use_context=True)
-    dp = updater.dispatcher
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("about", about))
+    app.add_handler(CommandHandler("help", help_command))
+    app.add_handler(CommandHandler("tips", tips))
 
-    # Command Handlers
-    dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(CommandHandler("about", about))
-    dp.add_handler(CommandHandler("help", help_command))
-    dp.add_handler(CommandHandler("tips", tips))
-
-    updater.start_polling()
-    updater.idle()
+    print("Bot is running...")
+    app.run_polling()
 
 if __name__ == "__main__":
     main()
