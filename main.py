@@ -1,7 +1,7 @@
 from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import Application, CommandHandler, ContextTypes
 
-# 👉 এখানে তোমার BotFather থেকে পাওয়া Token বসানো আছে
+# 👉 এখানে তোমার BotFather থেকে পাওয়া Token বসাও
 TOKEN = "8386188290:AAEW2I-fBiWr-goPDaVamm39VmGR6WuKZ-A"
 
 # /start command
