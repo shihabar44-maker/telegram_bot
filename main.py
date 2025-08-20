@@ -1,39 +1,27 @@
-from flask import Flask, request
-from telegram import Bot, Update, ReplyKeyboardMarkup
-from telegram.ext import Application, CommandHandler, ContextTypes
 import os
+from flask import Flask, request
+from telegram import Update, Bot
+from telegram.ext import Application, CommandHandler, ContextTypes
 
-# 👉 Bot Token বসাও
-TOKEN = "8386188290:AAEW2I-fBiWr-goPDaVamm39VmGR6WuKZ-A"
-
-# Flask App
-app = Flask(__name__)
+# --- Bot Token ---
+TOKEN = os.environ.get("BOT_TOKEN", "8386188290:AAEW2I-fBiWr-goPDaVamm39VmGR6WuKZ-A")
 bot = Bot(token=TOKEN)
 
-# Telegram Application
+# --- Flask app ---
+app = Flask(__name__)
+
+# --- Telegram Application ---
 application = Application.builder().token(TOKEN).build()
+
+# ---------------- Handlers ---------------- #
 
 # /start command
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    keyboard = [
-        ["💰 MY Account", "💬 Support"],
-        ["✨💥Referral💥✨", "💵 Balance"],
-        ["⚠️ Rules ⚠️", "✅ Withdraw 💯"],
-        ["❗🔥 How do you do income 🔥❗"]
-    ]
-    reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
-
-    await update.message.reply_text(
-        "⚡ স্বাগতম! আমি তোমার Telegram Bot.\n\n👉 নিচের মেনু থেকে বেছে নাও:",
-        reply_markup=reply_markup
-    )
+    await update.message.reply_text("হ্যালো 👋 আমি চালু আছি!")
 
 # /help command
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "আমি একটা সহকারী Telegram Bot 🤖\n"
-        "আমি আপনাকে কি ভাবে সাহায্য করতে পারি?"
-    )
+    await update.message.reply_text("আমি কিছু কমান্ড জানি: /start, /help, /about, /tips")
 
 # /about command
 async def about(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -47,13 +35,14 @@ async def tips(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "আমার সম্পর্কে আরো জানতে চাইলে ক্লিক করুন 👉 https://t.me/sr_sadiya_official"
     )
 
-# Handler Add
+# --- Register handlers ---
 application.add_handler(CommandHandler("start", start))
 application.add_handler(CommandHandler("help", help_command))
 application.add_handler(CommandHandler("about", about))
 application.add_handler(CommandHandler("tips", tips))
 
-# Webhook route
+# ---------------- Webhook Routes ---------------- #
+
 @app.route(f"/{TOKEN}", methods=["POST"])
 def webhook():
     update = Update.de_json(request.get_json(force=True), bot)
@@ -64,6 +53,8 @@ def webhook():
 def index():
     return "Bot is running with Webhook ✅"
 
+# ---------------- Run Flask ---------------- #
+
 if __name__ == "__main__":
-    PORT = int(os.environ.get("PORT", 10000))  # Render এ default port 10000
+    PORT = int(os.environ.get("PORT", 10000))  # Render default port = 10000
     app.run(host="0.0.0.0", port=PORT)
