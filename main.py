@@ -2,7 +2,6 @@ from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
 
 TOKEN = "8386188290:AAFA_-VB0LzomH46cXeWEg6OwJP8qNSPzOc"
-
 # /start command
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("⚡ একটা কমান্ড দিলেই উত্তর তোমার হাতে — এই হলো আমার Telegram Bot!")
