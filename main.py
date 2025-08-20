@@ -1,31 +1,40 @@
-import telebot
-from flask import Flask
-import threading
+from telegram import Update
+from telegram.ext import Application, CommandHandler, ContextTypes
 
 TOKEN = "8386188290:AAFA_-VB0LzomH46cXeWEg6OwJP8qNSPzOc"
-bot = telebot.TeleBot(TOKEN)
 
-# === Telegram Bot Handlers ===
-@bot.message_handler(commands=['start'])
-def send_welcome(message):
-    bot.reply_to(message, "হ্যালো 👋 আমি চালু আছি!")
+# /start
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("হ্যালো 👋 আমি চালু আছি!")
 
-@bot.message_handler(func=lambda m: True)
-def echo_all(message):
-    bot.reply_to(message, "তুমি লিখেছো: " + message.text)
+# /help
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        "🔹 Available Commands:\n"
+        "/start - Bot চালু করো\n"
+        "/help - সাহায্য নাও\n"
+        "/about - Bot সম্পর্কে জানো\n"
+        "/ping - Bot ঠিক আছে কিনা দেখো"
+    )
 
-# === Flask Server (for Render) ===
-app = Flask(__name__)
+# /about
+async def about(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("🤖 আমি একটা Telegram Bot, Python দিয়ে বানানো!")
 
-@app.route('/')
-def home():
-    return "Bot is running on Render!"
+# /ping
+async def ping(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("✅ Bot চলছে!")
 
-def run_flask():
-    app.run(host="0.0.0.0", port=10000)
+def main():
+    app = Application.builder().token(TOKEN).build()
 
-# === Start Both Flask + Bot ===
+    # শুধু কমান্ডগুলো কাজ করবে
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("help", help_command))
+    app.add_handler(CommandHandler("about", about))
+    app.add_handler(CommandHandler("ping", ping))
+
+    app.run_polling()
+
 if __name__ == "__main__":
-    threading.Thread(target=run_flask).start()
-    print("Bot is running...")
-    bot.infinity_polling()
+    main()
