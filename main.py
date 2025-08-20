@@ -1,32 +1,55 @@
-from telegram import Update
-from telegram.ext import Application, CommandHandler, ContextTypes
+from telegram import Update, ReplyKeyboardMarkup
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
+# 👉 এখানে তোমার BotFather থেকে পাওয়া টোকেন বসাও
 TOKEN = "8386188290:AAFA_-VB0LzomH46cXeWEg6OwJP8qNSPzOc"
+
 # /start command
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("⚡ একটা কমান্ড দিলেই উত্তর তোমার হাতে — এই হলো আমার Telegram Bot!")
+    keyboard = [
+        ["💰 MY Account", "💬 Support Group 💬"],
+        ["✨💥Referral💥✨", "💵 Balance 💯"],
+        ["⚠️ Rules ⚠️", "✅Withdraw💯"],
+        ["❗🔥 How do you do income 🔥❓", "✨🟢Live_Chat_Admin🟢✨"]
+    ]
 
-# /about command
-async def about(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("আমার নিজের হাতে তৈরি একটি ছোট্ট সহকারী — সবসময় প্রস্তুত তোমার কাজে সাহায্য করার জন্য!")
+    reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
 
-# /help command
-async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("আমি একটা সহকারী Telegram Bot 🧑‍💻 আমি আপনাকে কীভাবে সাহায্য করতে পারি?")
+    await update.message.reply_text(
+        "⚡ স্বাগতম! আমি তোমার Telegram Bot.\n\n👇 নিচের মেনু থেকে একটি বেছে নাও:",
+        reply_markup=reply_markup
+    )
 
-# /tips command
-async def tips(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("আমার সম্পর্কে আরো জানতে চাইলে 👉 https://t.me/sr_sadiya_official এই লিংকে ক্লিক করুন!")
+# যখন কোনো button চাপা হবে
+async def reply_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    text = update.message.text
 
+    if text == "💵 Balance 💯":
+        await update.message.reply_text("💰 তোমার Balance হলো: 1000 টাকা")
+    elif text == "⚠️ Rules ⚠️":
+        await update.message.reply_text("⚠️ পেমেন্ট পেতে হলে অবশ্যই আমাদের গ্রুপে জয়েন থাকতে হবে:\n👉 https://t.me/referearn_20")
+    elif text == "✅Withdraw💯":
+        await update.message.reply_text("✅ Withdraw করতে হলে Admin এর সাথে যোগাযোগ করুন।")
+    elif text == "✨💥Referral💥✨":
+        await update.message.reply_text("🔗 তোমার রেফারেল লিংক: https://t.me/YourBot?start=ref123")
+    elif text == "💰 MY Account":
+        await update.message.reply_text("📂 তোমার একাউন্টের বিস্তারিত এখানে দেখানো হবে।")
+    elif text == "💬 Support Group 💬":
+        await update.message.reply_text("👉 আমাদের সাপোর্ট গ্রুপ: https://t.me/YourSupportGroup")
+    elif text == "❗🔥 How do you do income 🔥❓":
+        await update.message.reply_text("💡 এখানে আয়ের নিয়ম দেওয়া হবে।")
+    elif text == "✨🟢Live_Chat_Admin🟢✨":
+        await update.message.reply_text("🔔 Admin এর সাথে যোগাযোগ করো: https://t.me/YourAdminUsername")
+    else:
+        await update.message.reply_text("❌ Invalid Option, আবার চেষ্টা করো।")
+
+# Main function
 def main():
     app = Application.builder().token(TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("about", about))
-    app.add_handler(CommandHandler("help", help_command))
-    app.add_handler(CommandHandler("tips", tips))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, reply_handler))
 
-    print("Bot is running...")
     app.run_polling()
 
 if __name__ == "__main__":
