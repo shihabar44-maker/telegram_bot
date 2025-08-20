@@ -5,7 +5,7 @@ TOKEN = "8386188290:AAFA_-VB0LzomH46cXeWEg6OwJP8qNSPzOc"
 
 # /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("হ্যালো 👋 আমি চালু আছি!")
+    await update.message.reply_text("আমার নিজের হাতে তৈরি একটি ছোট্ট সহকারী 🤖 — সবসময় প্রস্তুত তোমার কাজে সাহায্য করার জন্য!")
 
 # /help
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
