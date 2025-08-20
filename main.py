@@ -2,7 +2,7 @@ from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
 # 👉 এখানে তোমার BotFather থেকে পাওয়া টোকেন বসাও
-TOKEN = "8386188290:AAE87QCK2f90gVexrxDdYiShdHrH-zLFviw"
+TOKEN = "8386188290:AAHTsdQo--lJwyxCaoxN9R-BCj-XcEa4fKM"
 
 # /start command
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
