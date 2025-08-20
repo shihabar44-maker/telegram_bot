@@ -1,9 +1,17 @@
-    from telegram import Update, ReplyKeyboardMarkup
+from flask import Flask, request
+from telegram import Bot, Update, ReplyKeyboardMarkup
 from telegram.ext import Application, CommandHandler, ContextTypes
 import os
 
 # 👉 Bot Token বসাও
-TOKEN = os.getenv("BOT_TOKEN", "8386188290:AAEW2I-fBiWr-goPDaVamm39VmGR6WuKZ-A")
+TOKEN = "8386188290:AAEW2I-fBiWr-goPDaVamm39VmGR6WuKZ-A"
+
+# Flask App
+app = Flask(__name__)
+bot = Bot(token=TOKEN)
+
+# Telegram Application
+application = Application.builder().token(TOKEN).build()
 
 # /start command
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -39,25 +47,23 @@ async def tips(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "আমার সম্পর্কে আরো জানতে চাইলে ক্লিক করুন 👉 https://t.me/sr_sadiya_official"
     )
 
-def main():
-    app = Application.builder().token(TOKEN).build()
+# Handler Add
+application.add_handler(CommandHandler("start", start))
+application.add_handler(CommandHandler("help", help_command))
+application.add_handler(CommandHandler("about", about))
+application.add_handler(CommandHandler("tips", tips))
 
-    # Handlers
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("help", help_command))
-    app.add_handler(CommandHandler("about", about))
-    app.add_handler(CommandHandler("tips", tips))
+# Webhook route
+@app.route(f"/{TOKEN}", methods=["POST"])
+def webhook():
+    update = Update.de_json(request.get_json(force=True), bot)
+    application.update_queue.put_nowait(update)
+    return "ok"
 
-    # ✅ Render/Heroku এর জন্য Webhook Run
-    PORT = int(os.environ.get("PORT", 10000))
-    URL = os.environ.get("RENDER_EXTERNAL_URL")  # Render এ auto set হয়
-
-    app.run_webhook(
-        listen="0.0.0.0",
-        port=PORT,
-        url_path=TOKEN,
-        webhook_url=f"{URL}/{TOKEN}"
-    )
+@app.route("/")
+def index():
+    return "Bot is running with Webhook ✅"
 
 if __name__ == "__main__":
-    main()
+    PORT = int(os.environ.get("PORT", 10000))  # Render এ default port 10000
+    app.run(host="0.0.0.0", port=PORT)
