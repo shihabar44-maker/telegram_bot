@@ -3,7 +3,7 @@ from flask import Flask, request
 from telegram import Update, Bot, ReplyKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters
 
-# এখানে তোমার নতুন Bot Token বসাও
+# তোমার নতুন Bot Token
 TOKEN = "8331378652:AAHiopSQE7WLTQzVdifQNdTQ085GXuKXt5I"
 
 bot = Bot(TOKEN)
@@ -59,7 +59,7 @@ application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, button_h
 @app.route(f"/{TOKEN}", methods=["POST"])
 def webhook():
     update = Update.de_json(request.get_json(force=True), bot)
-    application.update_queue.put_nowait(update)
+    application.process_update(update)   # ✅ ঠিক করা হলো
     return "ok"
 
 @app.route("/")
