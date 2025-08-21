@@ -1,16 +1,9 @@
 import os
-import asyncio
-from flask import Flask, request
 from telegram import Update, Bot, ReplyKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters
 
-# তোমার Bot Token
+# তোমার নতুন Bot Token
 TOKEN = "8331378652:AAHiopSQE7WLTQzVdifQNdTQ085GXuKXt5I"
-
-bot = Bot(TOKEN)
-
-# Flask app
-app = Flask(__name__)
 
 # Telegram Application
 application = Application.builder().token(TOKEN).build()
@@ -50,24 +43,13 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif text == "🔥 Income Tips":
         await update.message.reply_text("🎁 ইনকাম করতে বন্ধুদের রেফার করো আর বোনাস পাও!")
     else:
-        await update.message.reply_text("❓ আমি এই অপশন চিনতে পারিনি, জানু।")
+        await update.message.reply_text("❓ আমি এই অপশন চিনতে পারিনি।")
 
 # ---------- Handlers ----------
 application.add_handler(CommandHandler("start", start))
 application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, button_handler))
 
-# ---------- Webhook Routes ----------
-@app.route(f"/{TOKEN}", methods=["POST"])
-def webhook():
-    data = request.get_json(force=True)
-    update = Update.de_json(data, bot)
-    asyncio.run(application.process_update(update))   # ✅ async properly handled
-    return "ok"
-
-@app.route("/")
-def index():
-    return "Bot is running with Webhook ✅"
-
+# ---------- Main (Polling) ----------
 if __name__ == "__main__":
-    PORT = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=PORT)
+    print("🤖 Bot polling শুরু হলো জানু...")
+    application.run_polling()
