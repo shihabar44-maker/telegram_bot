@@ -1,10 +1,20 @@
 from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters
+from flask import Flask
+import threading
+import os
 
 # তোমার Bot Token
 TOKEN = "8331378652:AAHiopSQE7WLTQzVdifQNdTQ085GXuKXt5I"
 
-# Application তৈরি
+# Flask app for Render health check
+app = Flask(__name__)
+
+@app.route('/')
+def home():
+    return "✅ Bot is running on Render!"
+
+# ---------- Telegram Bot ----------
 application = Application.builder().token(TOKEN).build()
 
 # ---------- Commands ----------
@@ -27,9 +37,10 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
 
     if text == "💰 My Account":
-        await update.message.reply_text("🧾 তোমার অ্যাকাউন্টের তথ্য এখানে!")
+        await update.message.reply_text("🧾 SR SHIHAB
+        🔴তোমার অ্যাকাউন্টের তথ্য এখানে!")
     elif text == "💬 Support":
-        await update.message.reply_text("📩 সাপোর্ট: @YourSupportID")
+        await update.message.reply_text("📩 সাপোর্ট: SR NIROB @YourSupportID")
     elif text == "💵 Balance":
         await update.message.reply_text("💸 তোমার বর্তমান ব্যালেন্স: 0৳")
     elif text == "✨ Referral":
@@ -37,7 +48,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif text == "⚠️ Rules":
         await update.message.reply_text("📜 নিয়মাবলী: এখানে নিয়ম লেখা থাকবে।")
     elif text == "✅ Withdraw":
-        await update.message.reply_text("✅ ন্যূনতম ৫০৳ হলে উইথড্র করতে পারবে।")
+        await update.message.reply_text("✅ ন্যূনতম ১০০৳ হলে উইথড্র করতে পারবে।")
     elif text == "🔥 Income Tips":
         await update.message.reply_text("🎁 ইনকাম করতে বন্ধুদের রেফার করো আর বোনাস পাও!")
     else:
@@ -47,6 +58,15 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 application.add_handler(CommandHandler("start", start))
 application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, button_handler))
 
-# ---------- Run Polling ----------
-if __name__ == "__main__":
+# ---------- Functions ----------
+def run_bot():
     application.run_polling()
+
+def run_flask():
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
+
+# ---------- Run Both ----------
+if __name__ == "__main__":
+    threading.Thread(target=run_bot).start()
+    run_flask()
