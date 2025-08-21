@@ -3,7 +3,7 @@ from flask import Flask, request
 from telegram import Update, Bot, ReplyKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters
 
-TOKEN = "8386188290:AAEW2I-fBiWr-goPDaVamm39VmGR6WuKZ-A"
+TOKEN = "8386188290:AAE-b22bqpbgV4TRtTQgItVy4S_7wjhESqo"
 bot = Bot(token=TOKEN)
 
 app = Flask(__name__)
