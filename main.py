@@ -1,15 +1,13 @@
-import os
-from telegram import Update, Bot, ReplyKeyboardMarkup
+from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters
 
-# তোমার নতুন Bot Token
+# তোমার Bot Token
 TOKEN = "8331378652:AAHiopSQE7WLTQzVdifQNdTQ085GXuKXt5I"
 
-# Telegram Application
+# Application তৈরি
 application = Application.builder().token(TOKEN).build()
 
 # ---------- Commands ----------
-# /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         ["💰 My Account", "💬 Support"],
@@ -20,7 +18,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
 
     await update.message.reply_text(
-        "👋 হ্যালো জানু! আমি চালু আছি\nনিচের মেনু থেকে যেকোনো একটি বেছে নাও:",
+        "👋 হ্যালো! আমি চালু আছি\nনিচের মেনু থেকে যেকোনো একটি বেছে নাও:",
         reply_markup=reply_markup
     )
 
@@ -49,7 +47,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 application.add_handler(CommandHandler("start", start))
 application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, button_handler))
 
-# ---------- Main (Polling) ----------
+# ---------- Run Polling ----------
 if __name__ == "__main__":
-    print("🤖 Bot polling শুরু হলো জানু...")
     application.run_polling()
