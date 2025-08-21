@@ -1,9 +1,10 @@
 import os
+import asyncio
 from flask import Flask, request
 from telegram import Update, Bot, ReplyKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters
 
-# তোমার নতুন Bot Token
+# তোমার Bot Token
 TOKEN = "8331378652:AAHiopSQE7WLTQzVdifQNdTQ085GXuKXt5I"
 
 bot = Bot(TOKEN)
@@ -26,7 +27,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
 
     await update.message.reply_text(
-        "👋 হ্যালো! আমি চালু আছি\nনিচের মেনু থেকে যেকোনো একটি বেছে নাও:",
+        "👋 হ্যালো জানু! আমি চালু আছি\nনিচের মেনু থেকে যেকোনো একটি বেছে নাও:",
         reply_markup=reply_markup
     )
 
@@ -49,7 +50,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif text == "🔥 Income Tips":
         await update.message.reply_text("🎁 ইনকাম করতে বন্ধুদের রেফার করো আর বোনাস পাও!")
     else:
-        await update.message.reply_text("❓ আমি এই অপশন চিনতে পারিনি।")
+        await update.message.reply_text("❓ আমি এই অপশন চিনতে পারিনি, জানু।")
 
 # ---------- Handlers ----------
 application.add_handler(CommandHandler("start", start))
@@ -58,8 +59,9 @@ application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, button_h
 # ---------- Webhook Routes ----------
 @app.route(f"/{TOKEN}", methods=["POST"])
 def webhook():
-    update = Update.de_json(request.get_json(force=True), bot)
-    application.process_update(update)   # ✅ ঠিক করা হলো
+    data = request.get_json(force=True)
+    update = Update.de_json(data, bot)
+    asyncio.run(application.process_update(update))   # ✅ async properly handled
     return "ok"
 
 @app.route("/")
