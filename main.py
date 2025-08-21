@@ -37,8 +37,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
 
     if text == "💰 My Account":
-        await update.message.reply_text("🧾 SR SHIHAB
-        🔴তোমার অ্যাকাউন্টের তথ্য এখানে!")
+        await update.message.reply_text("🧾 SR SHIHAB 🔴তোমার অ্যাকাউন্টের তথ্য এখানে!")
     elif text == "💬 Support":
         await update.message.reply_text("📩 সাপোর্ট: SR NIROB @YourSupportID")
     elif text == "💵 Balance":
