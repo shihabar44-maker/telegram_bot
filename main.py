@@ -1,138 +1,242 @@
-from telegram import Update, ReplyKeyboardMarkup, InlineKeyboardMarkup, InlineKeyboardButton
+from collections import defaultdict
+from telegram import (
+    Update, ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup
+)
 from telegram.ext import (
-    Application, CommandHandler, MessageHandler, filters,
-    ContextTypes, ConversationHandler, CallbackQueryHandler
+    Application, CommandHandler, MessageHandler, CallbackQueryHandler,
+    ConversationHandler, ContextTypes, filters
 )
 
-# Admin ID
-OWNER_ID = 8028396521  # এখানে তোমার Telegram numeric ID বসাও
+TOKEN = "8386188290:AAFoWLcvqlk030n1EzHUC2-mJq9vSOSelq0"
+OWNER_ID = 8028396521  # এখানে তোমার numeric Telegram ID দাও
 
-# User data
-user_data = {}
+# ===== Data store =====
+USERS = defaultdict(lambda: {"balance": 0})
 
-# States for Conversation
-ASK_NUMBER, ASK_CODE = range(2)
+# ===== Menus =====
+main_menu = ReplyKeyboardMarkup(
+    [
+        ["🏦 Accounts Sell", "💬 Support Group"],
+        ["💰 My Balance", "✅ Withdraw"],
+    ],
+    resize_keyboard=True
+)
 
-# Keyboard Layout
-main_menu = [
-    ["🏦 Accounts Sell", "💬 Support Group"],
-    ["💰 My Balance", "✅ Withdraw"]
-]
-reply_markup = ReplyKeyboardMarkup(main_menu, resize_keyboard=True)
+sell_menu = ReplyKeyboardMarkup(
+    [
+        ["📨 Telegram", "📞 WhatsApp"],
+        ["⬅️ Back"],
+    ],
+    resize_keyboard=True
+)
 
-# Start
+back_only = ReplyKeyboardMarkup([["⬅️ Back"]], resize_keyboard=True)
+
+withdraw_menu = ReplyKeyboardMarkup(
+    [
+        ["📲 Bkash", "💳 Nagad"],
+        ["⬅️ Back"],
+    ],
+    resize_keyboard=True
+)
+
+# ===== States =====
+CHOOSE_PLATFORM, ASK_NUMBER, ASK_CODE = range(3)
+WD_METHOD, WD_NUMBER = range(3, 5)
+
+# ===== /start =====
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
-    if user.id not in user_data:
-        user_data[user.id] = {"balance": 0}
-    await update.message.reply_text("✨ Welcome! Choose an option:", reply_markup=reply_markup)
+    _ = USERS[user.id]  # ensure record exists
+    await update.message.reply_text("✨ Welcome! Choose an option:", reply_markup=main_menu)
 
-# My Balance
-async def my_balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    balance = user_data[update.effective_user.id]["balance"]
-    await update.message.reply_text(f"💰 আপনার মোট Balance: {balance}৳")
+# ===== Static actions (no conversation) =====
+async def show_balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    bal = USERS[user.id]["balance"]
+    await update.message.reply_text(f"💰 আপনার মোট Balance: {bal}৳")
 
-# Step 1: Accounts Sell pressed
-async def accounts_sell(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("📲 আপনার Account Number দিন:")
+async def support_group(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("💬 Support Group: https://t.me/YourSupportGroup")
+
+# ===== Accounts Sell flow =====
+async def sell_entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("একটি প্ল্যাটফর্ম বাছাই করুন:", reply_markup=sell_menu)
+    context.user_data.pop("platform", None)
+    context.user_data.pop("acc_number", None)
+    return CHOOSE_PLATFORM
+
+async def choose_platform(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    text = update.message.text
+    if text == "📨 Telegram":
+        context.user_data["platform"] = "Telegram"
+    elif text == "📞 WhatsApp":
+        context.user_data["platform"] = "WhatsApp"
+    elif text == "⬅️ Back":
+        await update.message.reply_text("⬅️ Main Menu", reply_markup=main_menu)
+        return ConversationHandler.END
+    else:
+        await update.message.reply_text("উপরে থেকে একটি অপশন বেছে নিন।", reply_markup=sell_menu)
+        return CHOOSE_PLATFORM
+
+    await update.message.reply_text("📲 আপনার Account Number দিন:", reply_markup=back_only)
     return ASK_NUMBER
 
-# Step 2: User gives number
 async def ask_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    number = update.message.text
-    context.user_data["account_number"] = number
-    await update.message.reply_text("🔑 এখন আপনার Account Code দিন:")
+    if update.message.text == "⬅️ Back":
+        await update.message.reply_text("প্ল্যাটফর্ম বাছাই করুন:", reply_markup=sell_menu)
+        return CHOOSE_PLATFORM
+
+    number = update.message.text.strip()
+    if len(number) < 5:
+        await update.message.reply_text("❌ বৈধ Account Number দিন:", reply_markup=back_only)
+        return ASK_NUMBER
+
+    context.user_data["acc_number"] = number
+    await update.message.reply_text("🔑 এখন আপনার Account Code দিন:", reply_markup=back_only)
     return ASK_CODE
 
-# Step 3: User gives code
 async def complete_sell(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    code = update.message.text
-    number = context.user_data.get("account_number")
+    if update.message.text == "⬅️ Back":
+        await update.message.reply_text("প্ল্যাটফর্ম বাছাই করুন:", reply_markup=sell_menu)
+        return CHOOSE_PLATFORM
 
-    # Balance add
-    user_id = update.effective_user.id
-    user_data[user_id]["balance"] += 20
-    balance = user_data[user_id]["balance"]
+    code = update.message.text.strip()
+    if not code.isdigit():
+        await update.message.reply_text("❌ Code শুধু সংখ্যা হতে হবে!", reply_markup=back_only)
+        return ASK_CODE
+
+    user = update.effective_user
+    platform = context.user_data.get("platform", "Unknown")
+    number = context.user_data.get("acc_number")
+
+    # Add balance +20
+    USERS[user.id]["balance"] += 20
+    bal = USERS[user.id]["balance"]
 
     await update.message.reply_text(
         f"✅ Successful!\n"
+        f"🗂 Platform: {platform}\n"
         f"📲 Account: {number}\n"
         f"🔑 Code: {code}\n\n"
-        f"💰 আপনার নতুন Balance: {balance}৳"
+        f"💰 আপনার নতুন Balance: {bal}৳\n\n"
+        f"আরও অ্যাকাউন্ট পাঠাতে চাইলে আবার *Account Number* দিন, "
+        f"না হলে '⬅️ Back' চাপুন।",
+        reply_markup=back_only
     )
-    return ConversationHandler.END
+    # 🔁 stay in the same platform for unlimited entries
+    return ASK_NUMBER
 
-# Cancel handler
-async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("❌ Account Sell প্রক্রিয়া বাতিল হয়েছে।", reply_markup=reply_markup)
-    return ConversationHandler.END
-
-# Support group
-async def support(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("💬 আমাদের Support Group:\n👉 https://t.me/YourSupportGroupLink")
-
-# Withdraw
-async def withdraw(update: Update, context: ContextTypes.DEFAULT_TYPE):
+# ===== Withdraw flow =====
+async def withdraw_entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
-    balance = user_data.get(user.id, {}).get("balance", 0)
-
-    if balance < 100:  # মিনিমাম withdraw লিমিট
+    bal = USERS[user.id]["balance"]
+    if bal < 100:
         await update.message.reply_text("⚠️ মিনিমাম 100৳ হলে withdraw করা যাবে।")
-    else:
-        # Send request to admin
-        keyboard = InlineKeyboardMarkup([
-            [InlineKeyboardButton("✅ Approve", callback_data=f"approve_{user.id}")],
-            [InlineKeyboardButton("❌ Reject", callback_data=f"reject_{user.id}")]
-        ])
-        msg = (
-            f"📤 Withdraw Request\n\n"
-            f"👤 User: {user.first_name}\n"
-            f"🆔 ID: {user.id}\n"
-            f"💰 Amount: {balance}৳\n"
-            f"📱 Method: Bkash/Nagad\n"
-            f"Number: Not Provided"
-        )
-        await context.bot.send_message(chat_id=OWNER_ID, text=msg, reply_markup=keyboard)
-        await update.message.reply_text("📩 আপনার withdraw request admin এর কাছে পাঠানো হয়েছে।")
+        return ConversationHandler.END
 
-# Admin Callback (Approve/Reject)
-async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Withdraw Method নির্বাচন করুন:", reply_markup=withdraw_menu)
+    return WD_METHOD
+
+async def choose_method(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    text = update.message.text
+    if text == "⬅️ Back":
+        await update.message.reply_text("⬅️ Main Menu", reply_markup=main_menu)
+        return ConversationHandler.END
+
+    if text not in ("📲 Bkash", "💳 Nagad"):
+        await update.message.reply_text("উপরে থেকে একটি মেথড বেছে নিন:", reply_markup=withdraw_menu)
+        return WD_METHOD
+
+    context.user_data["wd_method"] = "Bkash" if text == "📲 Bkash" else "Nagad"
+    await update.message.reply_text("আপনার নাম্বার দিন:", reply_markup=back_only)
+    return WD_NUMBER
+
+async def take_withdraw_number(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.message.text == "⬅️ Back":
+        await update.message.reply_text("Withdraw Method নির্বাচন করুন:", reply_markup=withdraw_menu)
+        return WD_METHOD
+
+    number = update.message.text.strip()
+    user = update.effective_user
+    bal = USERS[user.id]["balance"]
+    method = context.user_data.get("wd_method", "Unknown")
+
+    # Send request to admin with inline Approve/Reject
+    keyboard = InlineKeyboardMarkup(
+        [
+            [InlineKeyboardButton("✅ Approve", callback_data=f"wd_approve_{user.id}")],
+            [InlineKeyboardButton("❌ Reject", callback_data=f"wd_reject_{user.id}")],
+        ]
+    )
+    admin_msg = (
+        "📥 Withdraw Request\n\n"
+        f"👤 User: {user.first_name} ({user.id})\n"
+        f"💰 Balance: {bal}৳ (full)\n"
+        f"💳 Method: {method}\n"
+        f"📲 Number: {number}"
+    )
+    await context.bot.send_message(chat_id=OWNER_ID, text=admin_msg, reply_markup=keyboard)
+    await update.message.reply_text("✅ আপনার withdraw request অ্যাডমিনের কাছে পাঠানো হয়েছে।", reply_markup=main_menu)
+    return ConversationHandler.END
+
+# ===== Admin inline: approve/reject =====
+async def admin_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
-    data = query.data.split("_")
-    action = data[0]
-    user_id = int(data[1])
+    try:
+        action, user_id = query.data.split("_")[1], int(query.data.split("_")[2])
+    except Exception:
+        await query.edit_message_text("Invalid action.")
+        return
 
     if action == "approve":
-        if user_id in user_data:
-            user_data[user_id]["balance"] = 0
-            await context.bot.send_message(chat_id=user_id, text="✅ আপনার withdraw request APPROVED ✅\n💰 Balance: 0৳")
-            await query.edit_message_text("✅ Withdraw request approved!")
+        USERS[user_id]["balance"] = 0
+        await context.bot.send_message(chat_id=user_id, text="✅ Withdraw APPROVED!\n💰 Balance: 0৳")
+        await query.edit_message_text("✅ Approved.")
     elif action == "reject":
-        await context.bot.send_message(chat_id=user_id, text="❌ আপনার withdraw request REJECTED ❌")
-        await query.edit_message_text("❌ Withdraw request rejected!")
+        await context.bot.send_message(chat_id=user_id, text="❌ Withdraw REJECTED.")
+        await query.edit_message_text("❌ Rejected.")
 
-# Main function
+# ===== Build app =====
 def main():
-    app = Application.builder().token("8386188290:AAFoWLcvqlk030n1EzHUC2-mJq9vSOSelq0").build()
+    app = Application.builder().token(TOKEN).build()
 
-    # Conversation handler
-    conv_handler = ConversationHandler(
-        entry_points=[MessageHandler(filters.Regex("^🏦 Accounts Sell$"), accounts_sell)],
+    # /start + static
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(MessageHandler(filters.Regex("^💰 My Balance$"), show_balance))
+    app.add_handler(MessageHandler(filters.Regex("^💬 Support Group$"), support_group))
+
+    # Accounts Sell conversation
+    sell_conv = ConversationHandler(
+        entry_points=[MessageHandler(filters.Regex("^🏦 Accounts Sell$"), sell_entry)],
         states={
+            CHOOSE_PLATFORM: [MessageHandler(filters.TEXT & ~filters.COMMAND, choose_platform)],
             ASK_NUMBER: [MessageHandler(filters.TEXT & ~filters.COMMAND, ask_code)],
             ASK_CODE: [MessageHandler(filters.TEXT & ~filters.COMMAND, complete_sell)],
         },
-        fallbacks=[CommandHandler("cancel", cancel)],
+        fallbacks=[MessageHandler(filters.Regex("^⬅️ Back$"), sell_entry)],
+        name="sell_conv",
+        persistent=False,
     )
+    app.add_handler(sell_conv)
 
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(conv_handler)
-    app.add_handler(MessageHandler(filters.Regex("^💰 My Balance$"), my_balance))
-    app.add_handler(MessageHandler(filters.Regex("^💬 Support Group$"), support))
-    app.add_handler(MessageHandler(filters.Regex("^✅ Withdraw$"), withdraw))
-    app.add_handler(CallbackQueryHandler(button_callback))
+    # Withdraw conversation
+    wd_conv = ConversationHandler(
+        entry_points=[MessageHandler(filters.Regex("^✅ Withdraw$"), withdraw_entry)],
+        states={
+            WD_METHOD: [MessageHandler(filters.TEXT & ~filters.COMMAND, choose_method)],
+            WD_NUMBER: [MessageHandler(filters.TEXT & ~filters.COMMAND, take_withdraw_number)],
+        },
+        fallbacks=[MessageHandler(filters.Regex("^⬅️ Back$"), withdraw_entry)],
+        name="wd_conv",
+        persistent=False,
+    )
+    app.add_handler(wd_conv)
+
+    # Admin callbacks
+    app.add_handler(CallbackQueryHandler(admin_callback, pattern="^wd_"))
 
     app.run_polling()
 
