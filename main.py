@@ -42,7 +42,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("✅ Minimum 100৳ হলে Withdraw করতে পারবে।", reply_markup=reply_markup)
 
     elif text == "💵 Balance":
-        await update.message.reply_text("💵 তোমার বর্তমান ব্যালেন্স: 0৳", reply_markup=reply_markup)
+        await update.message.reply_text("💵 তোমার বর্তমান ব্যালেন্স: 10,000৳", reply_markup=reply_markup)
 
     elif text == "💬 Support":
         await update.message.reply_text("📩 সাপোর্ট: @YourSupportID", reply_markup=reply_markup)
