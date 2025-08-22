@@ -14,7 +14,7 @@ async def start(update: Update, context: CallbackContext):
     reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
     
     await update.message.reply_text(
-        "✨ Welcome to *SR Media Bot* ✨\n\n"
+        "✨ Welcome to *Lovr Ie Fake😥* ✨\n\n"
         "Choose an option below 👇",
         reply_markup=reply_markup,
         parse_mode="Markdown"
