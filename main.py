@@ -46,7 +46,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Main Function
 def main():
-    app = Application.builder().token("8331378652:AAHiopSQE7WLTQzVdifQNdTQ085GXuKXt5I").build()
+    app = Application.builder().token("8386188290:AAFoWLcvqlk030n1EzHUC2-mJq9vSOSelq0").build()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
