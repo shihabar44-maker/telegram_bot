@@ -1,118 +1,115 @@
-from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext, ConversationHandler
+from telegram import Update, ReplyKeyboardMarkup
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
-# Steps for Withdraw
-SELECT_METHOD, ENTER_NUMBER, CONFIRM = range(3)
+# --------------------------
+# Replace these with your info
+BOT_TOKEN = "8422229356:AAGHAdJCFZNmgNAhx5CchxrM51U53oOc0Ec"   # তোমার BotFather থেকে পাওয়া টোকেন
+OWNER_ID = 8028396521           # এখানে তোমার Telegram numeric ID দাও
+# --------------------------
 
-OWNER_ID = 8028396521  # 👉 এখানে তোমার নিজের Telegram ID বসাও (যেখানে withdraw request যাবে)
+# Temporary storage for withdraw requests
+withdraw_requests = {}
 
-# =========================
-# Start Command
-# =========================
-async def start(update: Update, context: CallbackContext):
+# Start command
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
-        ["👤 My Account", "🔗 Referral"],
-        ["💸 Withdraw", "💰 Balance"],
-        ["📩 Support", "📜 Rules"],
-        ["💡 Income Tips"]
+        ["👤 My Account", "💸 Withdraw"],
+        ["📎 Referral", "📩 Support"],
+        ["📜 Rules", "💡 Income Tips"]
     ]
     reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
-    
-    await update.message.reply_text(
-        "✨ Welcome to *Love Ie Fake😥* ✨\n\n"
-        "Choose an option below 👇",
-        reply_markup=reply_markup,
-        parse_mode="Markdown"
-    )
+    await update.message.reply_text("🌸 Welcome to your bot! Choose an option:", reply_markup=reply_markup)
 
-# =========================
-# Withdraw Start
-# =========================
-async def withdraw(update: Update, context: CallbackContext):
-    keyboard = [["📲 Bkash", "💳 Nagad"]]
-    reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True, one_time_keyboard=True)
-    await update.message.reply_text("💸 Select Withdraw Method:", reply_markup=reply_markup)
-    return SELECT_METHOD
+# Handle all button clicks
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.message.from_user
+    text = update.message.text
 
-# =========================
-# Select Method
-# =========================
-async def select_method(update: Update, context: CallbackContext):
-    method = update.message.text
-    context.user_data["method"] = method
-    await update.message.reply_text(f"✍️ Enter your {method} number:")
-    return ENTER_NUMBER
+    # My Account
+    if text == "👤 My Account":
+        await update.message.reply_text(f"👤 Account Info:\nName: {user.first_name}\nID: {user.id}")
 
-# =========================
-# Enter Number
-# =========================
-async def enter_number(update: Update, context: CallbackContext):
-    number = update.message.text
-    method = context.user_data["method"]
-    user = update.effective_user
+    # Referral
+    elif text == "📎 Referral":
+        await update.message.reply_text("🔗 Your referral link:\nhttps://t.me/YOUR_BOT?start=" + str(user.id))
 
-    # Save info
-    context.user_data["number"] = number
+    # Support
+    elif text == "📩 Support":
+        await update.message.reply_text("📬 Contact Support: @yourusername")
 
-    # Send request to OWNER
-    msg = (
-        f"📥 *New Withdraw Request*\n\n"
-        f"👤 User: {user.full_name} (`{user.id}`)\n"
-        f"💳 Method: {method}\n"
-        f"📲 Number: {number}\n\n"
-        f"Reply 'YES {user.id}' to approve or 'NO {user.id}' to reject."
-    )
-    await context.bot.send_message(chat_id=OWNER_ID, text=msg, parse_mode="Markdown")
+    # Rules
+    elif text == "📜 Rules":
+        await update.message.reply_text("📜 Rules:\n1️⃣ Be honest 🤝\n2️⃣ No spam 🚫\n3️⃣ Respect others 🙏")
 
-    await update.message.reply_text("✅ Your request has been sent to admin. Please wait for approval.")
-    return ConversationHandler.END
+    # Income Tips
+    elif text == "💡 Income Tips":
+        await update.message.reply_text("💡 Income Tips:\n✅ Refer friends 👥\n✅ Stay active ⚡\n✅ Follow updates 🎁")
 
-# =========================
-# Owner Approval
-# =========================
-async def owner_reply(update: Update, context: CallbackContext):
-    text = update.message.text.split()
-    if len(text) == 2 and text[0].upper() in ["YES", "NO"]:
-        action, user_id = text[0].upper(), text[1]
-        try:
-            user_id = int(user_id)
-            if action == "YES":
-                await context.bot.send_message(chat_id=user_id, text="🎉 Your Withdraw is Successful ✅")
-                await update.message.reply_text("👍 Approved successfully.")
-            else:
-                await context.bot.send_message(chat_id=user_id, text="❌ Your Withdraw was Rejected.")
-                await update.message.reply_text("👎 Rejected successfully.")
-        except:
-            await update.message.reply_text("⚠️ Invalid User ID format.")
+    # Withdraw
+    elif text == "💸 Withdraw":
+        keyboard = [["📱 Bkash", "📱 Nagad"]]
+        reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
+        await update.message.reply_text("💰 Select Withdraw Method:", reply_markup=reply_markup)
+
+    # Bkash Withdraw
+    elif text == "📱 Bkash":
+        context.user_data["method"] = "Bkash"
+        await update.message.reply_text("✍ Enter your 📱 Bkash number:")
+
+    # Nagad Withdraw
+    elif text == "📱 Nagad":
+        context.user_data["method"] = "Nagad"
+        await update.message.reply_text("✍ Enter your 📱 Nagad number:")
+
+    # If expecting number
+    elif "method" in context.user_data:
+        method = context.user_data["method"]
+        number = text
+        req_id = str(user.id)  # unique request id
+        withdraw_requests[req_id] = {"user": user, "method": method, "number": number}
+
+        # Send request to owner
+        msg = f"📤 New Withdraw Request\n\n👤 User: {user.first_name} ({user.id})\n💳 Method: {method}\n📱 Number: {number}\n\nReply with YES {req_id} or NO {req_id}"
+        await context.bot.send_message(chat_id=OWNER_ID, text=msg)
+
+        await update.message.reply_text("✅ Your request has been sent to admin. Please wait for approval.")
+        del context.user_data["method"]  # reset
+
     else:
-        await update.message.reply_text("⚠️ Use 'YES <id>' or 'NO <id>'")
+        await update.message.reply_text("⚠️ Unknown command.")
 
-# =========================
-# Main Function
-# =========================
+# Admin approval (YES / NO)
+async def admin_response(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.message.from_user
+    if user.id != OWNER_ID:
+        return
+
+    text = update.message.text.split()
+    if len(text) == 2:
+        command, req_id = text[0].upper(), text[1]
+
+        if req_id in withdraw_requests:
+            request = withdraw_requests[req_id]
+            target_user = request["user"]
+
+            if command == "YES":
+                await context.bot.send_message(chat_id=target_user.id, text="🎉 Your withdraw was successful!")
+                await update.message.reply_text(f"✅ Approved withdraw for {target_user.first_name}")
+
+            elif command == "NO":
+                await context.bot.send_message(chat_id=target_user.id, text="❌ Your withdraw request was rejected.")
+                await update.message.reply_text(f"❌ Rejected withdraw for {target_user.first_name}")
+
+            del withdraw_requests[req_id]
+
+# Main function
 def main():
-    TOKEN = "8422229356:AAGHAdJCFZNmgNAhx5CchxrM51U53oOc0Ec"
+    app = Application.builder().token(BOT_TOKEN).build()
 
-    app = Application.builder().token(TOKEN).build()
-
-    # Withdraw Conversation
-    conv_handler = ConversationHandler(
-        entry_points=[MessageHandler(filters.Regex("^💸 Withdraw$"), withdraw)],
-        states={
-            SELECT_METHOD: [MessageHandler(filters.Regex("^(📲 Bkash|💳 Nagad)$"), select_method)],
-            ENTER_NUMBER: [MessageHandler(filters.TEXT & ~filters.COMMAND, enter_number)],
-        },
-        fallbacks=[],
-    )
-    app.add_handler(conv_handler)
-
-    # Owner approval
-    app.add_handler(MessageHandler(filters.TEXT & filters.User(OWNER_ID), owner_reply))
-
-    # Start command
     app.add_handler(CommandHandler("start", start))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, admin_response))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
-    print("🚀 Bot is running...")
     app.run_polling()
 
 if __name__ == "__main__":
