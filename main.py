@@ -21,7 +21,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.message.from_user
     # default balance যদি না থাকে → 0 set করব
     if user.id not in user_balances:
-        user_balances[user.id] = 50  # Test এর জন্য ৫০ টাকা দিলাম, চাইলে 0 করতে পারো
+        user_balances[user.id] = 50,000  # Test এর জন্য ৫০ টাকা দিলাম, চাইলে 0 করতে পারো
     await update.message.reply_text(
         "✨ Welcome! Choose an option:",
         reply_markup=reply_markup
