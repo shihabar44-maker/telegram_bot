@@ -50,3 +50,19 @@ application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, button_h
 # ---------- Run Polling ----------
 if __name__ == "__main__":
     application.run_polling()
+from telegram import Update, KeyboardButton, ReplyKeyboardMarkup
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    button = KeyboardButton("📱 Share my number", request_contact=True)
+    reply_markup = ReplyKeyboardMarkup([[button]], one_time_keyboard=True, resize_keyboard=True)
+    await update.message.reply_text("Hello! Please share your number:", reply_markup=reply_markup)
+
+async def contact_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    contact = update.message.contact
+    await update.message.reply_text(f"Thanks! I got your number: {contact.phone_number}")
+
+app = Application.builder().token("YOUR_BOT_TOKEN").build()
+app.add_handler(CommandHandler("start", start))
+app.add_handler(MessageHandler(filters.CONTACT, contact_handler))
+app.run_polling()
