@@ -80,7 +80,7 @@ async def income_tips(update: Update, context: CallbackContext):
 # Main Function
 # =========================
 def main():
-    TOKEN = "8331378652:AAHiopSQE7WLTQzVdifQNdTQ085GXuKXt5I"
+    TOKEN = "8422229356:AAGHAdJCFZNmgNAhx5CchxrM51U53oOc0Ec"
 
     app = Application.builder().token(TOKEN).build()
 
