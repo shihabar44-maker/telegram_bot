@@ -42,7 +42,7 @@ async def my_account(update: Update, context: CallbackContext):
 # =========================
 async def referral(update: Update, context: CallbackContext):
     user = update.effective_user
-    referral_link = f"https://t.me/@love_ie_fake_bot?start={user.id}"
+    referral_link = f"https://t.me/love_ie_fake_bot?start={user.id}"
     await update.message.reply_text(
         f"🔗 *Your Referral Link:*\n\n{referral_link}\n\n"
         "👥 Invite friends & earn rewards! 💎",
