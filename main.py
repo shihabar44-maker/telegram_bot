@@ -56,7 +56,7 @@ async def balance(update: Update, context: CallbackContext):
     await update.message.reply_text("💰 *Your Balance:* 0.00 USD 🪙", parse_mode="Markdown")
 
 async def support(update: Update, context: CallbackContext):
-    await update.message.reply_text("📩 *Contact Support:* @YourSupportUsername 🛠️", parse_mode="Markdown")
+    await update.message.reply_text("📩 *Contact Support:* @love_ie_fake 🛠️", parse_mode="Markdown")
 
 async def rules(update: Update, context: CallbackContext):
     await update.message.reply_text(
