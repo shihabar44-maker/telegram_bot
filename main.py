@@ -86,7 +86,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif text == "💵 Balance":
         await update.message.reply_text(
-            f"💵 আপনার বর্তমান ব্যালেন্স:10,000৳",
+            f"💵 আপনার বর্তমান ব্যালেন্স:50,000৳",
             reply_markup=reply_markup
         )
 
