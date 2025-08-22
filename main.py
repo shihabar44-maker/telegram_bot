@@ -25,8 +25,15 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
 
-    if text == "💰 My Account":
-        await update.message.reply_text("👤 This is your account info.", reply_markup=reply_markup)
+    elif query.data == "account":
+    user = query.from_user
+    text = (
+        f"👤 Your Account Details:\n\n"
+        f"🆔 ID: {user.id}\n"
+        f"👨 Name: {user.first_name}\n"
+        f"📛 Username: @{user.username or 'Not set'}"
+    )
+    await query.message.reply_text(text)
 
     elif text == "📢 Referral":
         await update.message.reply_text("🔗 Your referral link: https://t.me/YourBot?start=ref123", reply_markup=reply_markup)
