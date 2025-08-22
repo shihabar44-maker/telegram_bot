@@ -76,7 +76,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Support
     elif text == "💬 Support":
-        await update.message.reply_text("📩 সাপোর্টের জন্য যোগাযোগ করুন: @YourSupportID")
+        await update.message.reply_text("📩 সাপোর্টের জন্য যোগাযোগ করুন: @love_ie_fake")
 
     # Rules
     elif text == "⚠️ Rules":
