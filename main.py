@@ -1,80 +1,103 @@
 from telegram import Update, ReplyKeyboardMarkup
-from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext
 
-# তোমার Bot Token
-TOKEN = "8331378652:AAHiopSQE7WLTQzVdifQNdTQ085GXuKXt5I"
-
-# ---------- Telegram Bot ----------
-application = Application.builder().token(TOKEN).build()
-
-# ---------- Commands ----------
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+# =========================
+# Start Command
+# =========================
+async def start(update: Update, context: CallbackContext):
     keyboard = [
-        ["💰 My Account", "💬 Support"],
-        ["✨ Referral", "💵 Balance"],
-        ["⚠️ Rules", "✅ Withdraw"],
-        ["🔥 Income Tips"]
+        ["👤 My Account", "🔗 Referral"],
+        ["💸 Withdraw", "💰 Balance"],
+        ["📩 Support", "📜 Rules"],
+        ["💡 Income Tips"]
     ]
     reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
-
+    
     await update.message.reply_text(
-        "👋 হ্যালো! আমি চালু আছি\nনিচের মেনু থেকে যেকোনো একটি বেছে নাও:",
-        reply_markup=reply_markup
+        "✨ Welcome to *SR Media Bot* ✨\n\n"
+        "Choose an option below 👇",
+        reply_markup=reply_markup,
+        parse_mode="Markdown"
     )
 
-# ---------- Text Button Handler ----------
-async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = update.message.text
+# =========================
+# My Account Handler
+# =========================
+async def my_account(update: Update, context: CallbackContext):
+    user = update.effective_user
 
-    if text == "💰 My Account 💰":
-        await update.message.reply_text("🧾 SR SHIHAB 🔴 তোমার অ্যাকাউন্টের তথ্য এখানে!")
-    elif text == "💬 Support":
-        await update.message.reply_text("📩 সাপোর্ট: SR NIROB @YourSupportID")
-    elif text == "💵 Balance 💵":
-        await update.message.reply_text("💸 তোমার বর্তমান ব্যালেন্স: 0৳")
-    elif text == "✨ Referral ✨":
-        await update.message.reply_text("🔗 রেফারেল লিংক: https://t.me/YourBot?start=ref123")
-    elif text == "⚠️ Rules ⚠️":
-        await update.message.reply_text("📜 নিয়মাবলী: এখানে নিয়ম লেখা থাকবে।")
-    elif text == "✅ Withdraw ✅":
-        await update.message.reply_text("Minimum withdraw : 1000 টাকা .
+    account_info = f"""
+👤 *Your Account Details*:
 
-Payment : ( উইথড্র করার 24 ঘন্টার মধ্যে প্রেমেন্ট পেয়ে জাবেন )
+🆔 *ID:* `{user.id}`
+👨‍💻 *Name:* {user.full_name}
+📧 *Username:* @{user.username if user.username else "Not set"}
+🌐 *Language:* {user.language_code}
+    """
 
-🏛 মিনিমাম উইথড্র ব্যালেন্স .
-💵 Bkash >1000 টাকা .
-💵 Nagad >1000 টাকা.
+    await update.message.reply_text(account_info, parse_mode="Markdown")
 
-! আপনার একাউন্টে মিনিমাম 1000 টাকা থাকতে হবে. তাহলে আপনার উইথড্র 100% সাক্সেসফুল হবে.
+# =========================
+# Other Buttons Handlers
+# =========================
+async def referral(update: Update, context: CallbackContext):
+    user = update.effective_user
+    referral_link = f"https://t.me/YOUR_BOT_USERNAME?start={user.id}"
+    await update.message.reply_text(
+        f"🔗 *Your Referral Link:*\n\n{referral_link}\n\n"
+        "👥 Invite friends & earn rewards! 💎",
+        parse_mode="Markdown"
+    )
 
-( প্রতিদিন সবার পেমেন্ট হিস্টরি পেতে বোডের গ্রুপে চোখ রাখুন. ধন্যবাদ. )
+async def withdraw(update: Update, context: CallbackContext):
+    await update.message.reply_text("💸 *Withdraw option will be available soon!* ⏳", parse_mode="Markdown")
 
-⚠️আপনার একাউন্টে বর্তমান ব্যালেন্স রয়েছে 1200 টাকা •")
-    elif text == "🔥 Income Tips 🔥":
-        await update.message.reply_text("🎁 ইনকাম করতে বন্ধুদের রেফার করো আর বোনাস পাও!")
-    else:
-        await update.message.reply_text("❓ আমি এই অপশন চিনতে পারিনি।")
+async def balance(update: Update, context: CallbackContext):
+    await update.message.reply_text("💰 *Your Balance:* 0.00 USD 🪙", parse_mode="Markdown")
 
-# ---------- Handlers ----------
-application.add_handler(CommandHandler("start", start))
-application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, button_handler))
+async def support(update: Update, context: CallbackContext):
+    await update.message.reply_text("📩 *Contact Support:* @YourSupportUsername 🛠️", parse_mode="Markdown")
 
-# ---------- Run Polling ----------
+async def rules(update: Update, context: CallbackContext):
+    await update.message.reply_text(
+        "📜 *Rules:*\n\n"
+        "1️⃣ Be honest 🤝\n"
+        "2️⃣ No spam 🚫\n"
+        "3️⃣ Respect others 🙏",
+        parse_mode="Markdown"
+    )
+
+async def income_tips(update: Update, context: CallbackContext):
+    await update.message.reply_text(
+        "💡 *Income Tips:*\n\n"
+        "✅ Refer friends to earn more 👥\n"
+        "✅ Stay active daily ⚡\n"
+        "✅ Follow updates for bonuses 🎁",
+        parse_mode="Markdown"
+    )
+
+# =========================
+# Main Function
+# =========================
+def main():
+    TOKEN = "8331378652:AAHiopSQE7WLTQzVdifQNdTQ085GXuKXt5I"
+
+    app = Application.builder().token(TOKEN).build()
+
+    # Command
+    app.add_handler(CommandHandler("start", start))
+
+    # Button Handlers
+    app.add_handler(MessageHandler(filters.Regex("^👤 My Account$"), my_account))
+    app.add_handler(MessageHandler(filters.Regex("^🔗 Referral$"), referral))
+    app.add_handler(MessageHandler(filters.Regex("^💸 Withdraw$"), withdraw))
+    app.add_handler(MessageHandler(filters.Regex("^💰 Balance$"), balance))
+    app.add_handler(MessageHandler(filters.Regex("^📩 Support$"), support))
+    app.add_handler(MessageHandler(filters.Regex("^📜 Rules$"), rules))
+    app.add_handler(MessageHandler(filters.Regex("^💡 Income Tips$"), income_tips))
+
+    print("🚀 Bot is running...")
+    app.run_polling()
+
 if __name__ == "__main__":
-    application.run_polling()
-from telegram import Update, KeyboardButton, ReplyKeyboardMarkup
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
-
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    button = KeyboardButton("📱 Share my number", request_contact=True)
-    reply_markup = ReplyKeyboardMarkup([[button]], one_time_keyboard=True, resize_keyboard=True)
-    await update.message.reply_text("Hello! Please share your number:", reply_markup=reply_markup)
-
-async def contact_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    contact = update.message.contact
-    await update.message.reply_text(f"Thanks! I got your number: {contact.phone_number}")
-
-app = Application.builder().token("YOUR_BOT_TOKEN").build()
-app.add_handler(CommandHandler("start", start))
-app.add_handler(MessageHandler(filters.CONTACT, contact_handler))
-app.run_polling()
+    main()
