@@ -17,7 +17,6 @@ main_menu = [
 
 reply_markup = ReplyKeyboardMarkup(main_menu, resize_keyboard=True)
 
-
 # Start Command
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
@@ -30,7 +29,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "✨ Welcome! Choose an option:",
         reply_markup=reply_markup
     )
-
 
 # Handle menu clicks
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -78,7 +76,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Support
     elif text == "💬 Support":
-        await update.message.reply_text("📩 সাপোর্ট এর জন্য যোগাযোগ করুন: @YourSupportID")
+        await update.message.reply_text("📩 সাপোর্টের জন্য যোগাযোগ করুন: @YourSupportID")
 
     # Rules
     elif text == "⚠️ Rules":
@@ -87,7 +85,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Income Tips
     elif text == "🔥 Income Tips":
         await update.message.reply_text("🔥 বেশি referral আনলে বেশি income হবে!\n🔥 প্রতিদিন Active থাকলে Bonus পাবেন।")
-
 
 # Admin Callback (Approve/Reject)
 async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -107,7 +104,6 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await context.bot.send_message(chat_id=user_id, text="❌ তোমার withdraw request REJECTED ❌")
         await query.edit_message_text("❌ Withdraw request rejected!")
 
-
 # Main Function
 def main():
     app = Application.builder().token("8422229356:AAGHAdJCFZNmgNAhx5CchxrM51U53oOc0Ec").build()
@@ -117,7 +113,6 @@ def main():
     app.add_handler(CallbackQueryHandler(button_callback))
 
     app.run_polling()
-
 
 if __name__ == "__main__":
     main()
