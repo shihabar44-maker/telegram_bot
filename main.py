@@ -76,6 +76,18 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await context.bot.send_message(chat_id=OWNER_ID, text=msg, reply_markup=keyboard)
             await update.message.reply_text("📩 তোমার withdraw request admin এর কাছে পাঠানো হয়েছে।")
 
+    # Support
+    elif text == "💬 Support":
+        await update.message.reply_text("📩 সাপোর্ট এর জন্য যোগাযোগ করুন: @YourSupportID")
+
+    # Rules
+    elif text == "⚠️ Rules":
+        await update.message.reply_text("⚠️ মিনিমাম withdraw 100৳\n⚠️ একাধিক fake request করলে ব্যান করা হবে।")
+
+    # Income Tips
+    elif text == "🔥 Income Tips":
+        await update.message.reply_text("🔥 বেশি referral আনলে বেশি income হবে!\n🔥 প্রতিদিন Active থাকলে Bonus পাবেন।")
+
 
 # Admin Callback (Approve/Reject)
 async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
