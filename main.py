@@ -1,24 +1,40 @@
 import logging
 import re
 from aiogram import Bot, Dispatcher, executor, types
+from aiogram.contrib.fsm_storage.memory import MemoryStorage
+from aiogram.dispatcher import FSMContext
+from aiogram.dispatcher.filters.state import State, StatesGroup
 
-API_TOKEN = "8386188290:AAFoWLcvqlk030n1EzHUC2-mJq9vSOSelq0"   # <-- এখানে তোমার BotFather থেকে পাওয়া token দাও
-ADMIN_ID = 8028396521         # <-- এখানে তোমার Telegram ID দাও
+API_TOKEN = "8386188290:AAFoWLcvqlk030n1EzHUC2-mJq9vSOSelq0"   # <-- তোমার BotFather থেকে পাওয়া token
+ADMIN_ID = 8028396521          # <-- তোমার Telegram ID
 
 logging.basicConfig(level=logging.INFO)
 
 bot = Bot(token=API_TOKEN)
-dp = Dispatcher(bot)
+storage = MemoryStorage()
+dp = Dispatcher(bot, storage=storage)
 
-# Users data store
+# Users data store (temporary - DB connect করা যাবে পরে)
 users = {}
 
-# Start command
+# --- States ---
+class SellAccount(StatesGroup):
+    waiting_for_platform = State()
+    waiting_for_number = State()
+    waiting_for_code = State()
+
+class Withdraw(StatesGroup):
+    waiting_for_number = State()
+    waiting_for_amount = State()
+
+
+# --- Start ---
 @dp.message_handler(commands=['start'])
 async def send_welcome(message: types.Message):
     user_id = message.from_user.id
     if user_id not in users:
         users[user_id] = {"balance": 0}
+
     keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
     keyboard.add("🏦 Accounts Sell", "💬 Support Group")
     keyboard.add("💰 My Balance", "✅ Withdraw")
@@ -31,34 +47,44 @@ async def accounts_sell(message: types.Message):
     keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
     keyboard.add("📲 Telegram", "📞 WhatsApp")
     await message.answer("একটি প্ল্যাটফর্ম বেছে নিন:", reply_markup=keyboard)
+    await SellAccount.waiting_for_platform.set()
 
 
-@dp.message_handler(lambda m: m.text in ["📲 Telegram", "📞 WhatsApp"])
-async def ask_account_number(message: types.Message):
-    users[message.from_user.id]["platform"] = message.text
+@dp.message_handler(state=SellAccount.waiting_for_platform)
+async def process_platform(message: types.Message, state: FSMContext):
+    if message.text not in ["📲 Telegram", "📞 WhatsApp"]:
+        await message.answer("❌ সঠিক প্ল্যাটফর্ম বেছে নিন।")
+        return
+
+    await state.update_data(platform=message.text)
     await message.answer("📱 আপনার Account Number দিন (country code সহ):")
+    await SellAccount.waiting_for_number.set()
 
 
-@dp.message_handler(lambda m: "platform" in users.get(m.from_user.id, {}))
-async def receive_account_number(message: types.Message):
+@dp.message_handler(state=SellAccount.waiting_for_number)
+async def process_number(message: types.Message, state: FSMContext):
     number = message.text.strip()
-    # Regex for valid number (+88017xxxxxxx)
     if not re.match(r"^\+\d{6,15}$", number):
         await message.answer("❌ সঠিক নাম্বার দিন (country code সহ)। উদাহরণ: +88017XXXXXXX")
         return
 
-    users[message.from_user.id]["number"] = number
+    await state.update_data(number=number)
     await message.answer("🔑 আপনার Account Code দিন:")
+    await SellAccount.waiting_for_code.set()
 
 
-@dp.message_handler(lambda m: "number" in users.get(m.from_user.id, {}))
-async def receive_account_code(message: types.Message):
+@dp.message_handler(state=SellAccount.waiting_for_code)
+async def process_code(message: types.Message, state: FSMContext):
     code = message.text.strip()
-    users[message.from_user.id]["code"] = code
+    data = await state.get_data()
+    platform = data["platform"]
+    number = data["number"]
 
-    user = users[message.from_user.id]
-    platform = user["platform"]
-    number = user["number"]
+    users[message.from_user.id].update({
+        "platform": platform,
+        "number": number,
+        "code": code
+    })
 
     # Send request to admin
     keyboard = types.InlineKeyboardMarkup()
@@ -77,6 +103,7 @@ async def receive_account_code(message: types.Message):
     )
 
     await message.answer("✅ আপনার রিকোয়েস্ট Admin এর কাছে পাঠানো হয়েছে।")
+    await state.finish()
 
 
 # --- Admin approve/reject ---
@@ -88,13 +115,15 @@ async def process_admin_action(callback: types.CallbackQuery):
     if action == "approve":
         keyboard = types.InlineKeyboardMarkup()
         keyboard.add(types.InlineKeyboardButton("🎁 Claim 20৳", callback_data=f"claim_{user_id}"))
-        await bot.send_message(user_id,
-                               f"✅ আপনার Account Sell request Approved!\n\n"
-                               f"📲 Platform: {users[user_id]['platform']}\n"
-                               f"📱 Account: {users[user_id]['number']}\n"
-                               f"🔑 Code: {users[user_id]['code']}\n\n"
-                               f"💰 Claim করতে নিচের বাটন চাপুন:",
-                               reply_markup=keyboard)
+        await bot.send_message(
+            user_id,
+            f"✅ আপনার Account Sell request Approved!\n\n"
+            f"📲 Platform: {users[user_id]['platform']}\n"
+            f"📱 Account: {users[user_id]['number']}\n"
+            f"🔑 Code: {users[user_id]['code']}\n\n"
+            f"💰 Claim করতে নিচের বাটন চাপুন:",
+            reply_markup=keyboard
+        )
     else:
         await bot.send_message(user_id, "❌ আপনার Account Sell request Rejected.")
 
@@ -121,27 +150,38 @@ async def my_balance(message: types.Message):
 @dp.message_handler(lambda m: m.text == "✅ Withdraw")
 async def withdraw(message: types.Message):
     await message.answer("📱 আপনার Withdraw Number দিন (country code সহ):")
+    await Withdraw.waiting_for_number.set()
 
 
-@dp.message_handler(lambda m: m.text.startswith("+") and len(m.text) > 6)
-async def withdraw_number(message: types.Message):
+@dp.message_handler(state=Withdraw.waiting_for_number)
+async def withdraw_number(message: types.Message, state: FSMContext):
     number = message.text.strip()
     if not re.match(r"^\+\d{6,15}$", number):
         await message.answer("❌ সঠিক নাম্বার দিন (country code সহ)। উদাহরণ: +88017XXXXXXX")
         return
 
-    users[message.from_user.id]["withdraw_number"] = number
+    await state.update_data(number=number)
     await message.answer("💵 আপনার Withdraw Amount দিন:")
+    await Withdraw.waiting_for_amount.set()
 
 
-@dp.message_handler(lambda m: m.text.isdigit())
-async def withdraw_amount(message: types.Message):
+@dp.message_handler(state=Withdraw.waiting_for_amount)
+async def withdraw_amount(message: types.Message, state: FSMContext):
+    if not message.text.isdigit():
+        await message.answer("❌ শুধুমাত্র সংখ্যায় Amount দিন।")
+        return
+
     amount = int(message.text)
     user_id = message.from_user.id
 
     if amount > users[user_id]["balance"]:
         await message.answer("❌ আপনার কাছে পর্যাপ্ত Balance নেই।")
         return
+
+    data = await state.get_data()
+    number = data["number"]
+
+    users[user_id]["withdraw_number"] = number
 
     # Send request to admin
     keyboard = types.InlineKeyboardMarkup()
@@ -153,12 +193,13 @@ async def withdraw_amount(message: types.Message):
         ADMIN_ID,
         f"💸 নতুন Withdraw Request:\n\n"
         f"👤 User: {user_id}\n"
-        f"📱 Number: {users[user_id]['withdraw_number']}\n"
+        f"📱 Number: {number}\n"
         f"💰 Amount: {amount}৳",
         reply_markup=keyboard
     )
 
     await message.answer("✅ আপনার Withdraw Request Admin এর কাছে পাঠানো হয়েছে।")
+    await state.finish()
 
 
 # --- Withdraw admin action ---
