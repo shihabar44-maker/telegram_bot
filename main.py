@@ -152,10 +152,14 @@ async def complete_sell(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     await context.bot.send_message(chat_id=OWNER_ID, text=msg, reply_markup=keyboard)
 
-    await update.message.reply_text(
+    sent = await update.message.reply_text(
         "🔃 Processing your request...।\n\n👉 নতুন Account দিতে চাইলে আবার নাম্বার লিখুন অথবা ⬅️ Back চাপুন।",
         reply_markup=back_only
     )
+
+    # Save message_id for later edit
+    context.user_data["pending_msg_id"] = sent.message_id
+    context.user_data["chat_id"] = sent.chat_id
     return ASK_NUMBER
 
 # ===== Withdraw Flow =====
@@ -230,34 +234,44 @@ async def admin_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_id = int(data[2])
         platform, number, code = data[3], data[4], data[5]
 
+        # Try to edit the user's "processing" message
+        try:
+            chat_id = context.user_data.get("chat_id")
+            msg_id = context.user_data.get("pending_msg_id")
+        except Exception:
+            chat_id, msg_id = None, None
+
         if action == "approve":
-            kb = InlineKeyboardMarkup(
-                [[InlineKeyboardButton("🎁 Claim 20৳", callback_data=f"claim_{user_id}")]]
-            )
-            await context.bot.send_message(
-                chat_id=user_id,
-                text=(
-                    f"✅ Account Sell Successful!\n\n"
-                    f"🗂 Platform: {platform}\n"
-                    f"📲 Account: {number}\n"
-                    f"🔑 Code: {code}\n\n"
-                    f"💰 Claim করতে নিচের বাটন চাপুন:"
-                ),
-                reply_markup=kb
-            )
+            if chat_id and msg_id:
+                await context.bot.edit_message_text(
+                    chat_id=chat_id,
+                    message_id=msg_id,
+                    text=(
+                        f"✅ Account Sell Successful!\n\n"
+                        f"🗂 Platform: {platform}\n"
+                        f"📲 Account: {number}\n"
+                        f"🔑 Code: {code}\n\n"
+                        f"💰 Claim করতে নিচের বাটন চাপুন:"
+                    ),
+                    reply_markup=InlineKeyboardMarkup(
+                        [[InlineKeyboardButton("🎁 Claim 20৳", callback_data=f"claim_{user_id}")]]
+                    )
+                )
             await query.edit_message_text("✅ Approved & Claim sent.")
 
         else:  # reject
-            await context.bot.send_message(
-                chat_id=user_id,
-                text=(
-                    f"❌ Account Sell Rejected!\n\n"
-                    f"🗂 Platform: {platform}\n"
-                    f"📲 Account: {number}\n"
-                    f"🔑 Code: {code}\n\n"
-                    f"⚠️ আবার চেষ্টা করুন অথবা Support Group এ যোগাযোগ করুন।"
+            if chat_id and msg_id:
+                await context.bot.edit_message_text(
+                    chat_id=chat_id,
+                    message_id=msg_id,
+                    text=(
+                        f"❌ Account Sell Rejected!\n\n"
+                        f"🗂 Platform: {platform}\n"
+                        f"📲 Account: {number}\n"
+                        f"🔑 Code: {code}\n\n"
+                        f"⚠️ আবার চেষ্টা করুন অথবা Support Group এ যোগাযোগ করুন।"
+                    )
                 )
-            )
             await query.edit_message_text("❌ Rejected.")
 
     elif data[0] == "wd":  # Withdraw requests
