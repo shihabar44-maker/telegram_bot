@@ -16,11 +16,12 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-TOKEN = "8386188290:AAFoWLcvqlk030n1EzHUC2-mJq9vSOSelq0"
+TOKEN = "YOUR_BOT_TOKEN"
 OWNER_ID = 8028396521   # তোমার Numeric Telegram ID এখানে দাও
 
 # ===== Data Store =====
 USERS = defaultdict(lambda: {"balance": 0})
+PENDING_MESSAGES = {}   # 🔥 user_id -> {"chat_id":..., "msg_id":...}
 
 # ===== Menus =====
 main_menu = ReplyKeyboardMarkup(
@@ -157,9 +158,9 @@ async def complete_sell(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=back_only
     )
 
-    # Save message_id for later edit
-    context.user_data["pending_msg_id"] = sent.message_id
-    context.user_data["chat_id"] = sent.chat_id
+    # Save pending message globally (not just in user_data)
+    PENDING_MESSAGES[user.id] = {"chat_id": sent.chat_id, "msg_id": sent.message_id}
+
     return ASK_NUMBER
 
 # ===== Withdraw Flow =====
@@ -234,18 +235,13 @@ async def admin_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_id = int(data[2])
         platform, number, code = data[3], data[4], data[5]
 
-        # Try to edit the user's "processing" message
-        try:
-            chat_id = context.user_data.get("chat_id")
-            msg_id = context.user_data.get("pending_msg_id")
-        except Exception:
-            chat_id, msg_id = None, None
+        pending = PENDING_MESSAGES.get(user_id)
 
         if action == "approve":
-            if chat_id and msg_id:
+            if pending:
                 await context.bot.edit_message_text(
-                    chat_id=chat_id,
-                    message_id=msg_id,
+                    chat_id=pending["chat_id"],
+                    message_id=pending["msg_id"],
                     text=(
                         f"✅ Account Sell Successful!\n\n"
                         f"🗂 Platform: {platform}\n"
@@ -260,10 +256,10 @@ async def admin_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.edit_message_text("✅ Approved & Claim sent.")
 
         else:  # reject
-            if chat_id and msg_id:
+            if pending:
                 await context.bot.edit_message_text(
-                    chat_id=chat_id,
-                    message_id=msg_id,
+                    chat_id=pending["chat_id"],
+                    message_id=pending["msg_id"],
                     text=(
                         f"❌ Account Sell Rejected!\n\n"
                         f"🗂 Platform: {platform}\n"
