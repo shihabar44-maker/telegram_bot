@@ -304,7 +304,7 @@ def main():
     )
     app.add_handler(wd_conv)
 
-    # Admin
+    # Admin + Claim
     app.add_handler(CallbackQueryHandler(admin_callback, pattern="^(sell|wd|claim)_"))
 
     logger.info("Bot started polling...")
