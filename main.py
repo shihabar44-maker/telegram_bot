@@ -21,7 +21,7 @@ OWNER_ID = 8028396521   # তোমার Numeric Telegram ID এখানে �
 
 # ===== Data Store =====
 USERS = defaultdict(lambda: {"balance": 0})
-PENDING = {}  # user_id -> {chat_id, msg_id, platform, number, code}
+PENDING = {}  # user_id -> {platform, number, code}
 
 # ===== Menus =====
 main_menu = ReplyKeyboardMarkup(
@@ -141,15 +141,13 @@ async def complete_sell(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     await context.bot.send_message(chat_id=OWNER_ID, text=msg, reply_markup=keyboard)
 
-    sent = await update.message.reply_text(
+    await update.message.reply_text(
         "🔃 Processing your request...।\n\n👉 নতুন Account দিতে চাইলে আবার নাম্বার লিখুন অথবা ⬅️ Back চাপুন।",
         reply_markup=back_only
     )
 
     # Save pending
     PENDING[user.id] = {
-        "chat_id": sent.chat_id,
-        "msg_id": sent.message_id,
         "platform": platform,
         "number": number,
         "code": code,
@@ -215,14 +213,8 @@ async def admin_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
-    logger.info(f"Callback Data: {query.data}")  # Debugging log
-
-    try:
-        data = query.data.split("_")
-        category, action, user_id = data[0], data[1], int(data[2])
-    except Exception as e:
-        logger.error(f"Callback parse error: {e}, data={query.data}")
-        return
+    data = query.data.split("_")
+    category, action, user_id = data[0], data[1], int(data[2])
 
     if category == "sell":
         pending = PENDING.get(user_id)
@@ -230,13 +222,12 @@ async def admin_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.edit_message_text("⚠️ Request expired or not found.")
             return
 
-        chat_id, msg_id = pending["chat_id"], pending["msg_id"]
         platform, number, code = pending["platform"], pending["number"], pending["code"]
 
         if action == "approve":
-            await context.bot.edit_message_text(
-                chat_id=chat_id,
-                message_id=msg_id,
+            # user notify
+            await context.bot.send_message(
+                chat_id=user_id,
                 text=(
                     f"✅ Account Sell Successful!\n\n"
                     f"🗂 Platform: {platform}\n"
@@ -248,11 +239,10 @@ async def admin_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     [[InlineKeyboardButton("🎁 Claim 20৳", callback_data=f"claim_{user_id}")]]
                 )
             )
-            await query.edit_message_text("✅ Approved & Claim sent.")
+            await query.edit_message_text("✅ Approved & User Notified.")
         else:
-            await context.bot.edit_message_text(
-                chat_id=chat_id,
-                message_id=msg_id,
+            await context.bot.send_message(
+                chat_id=user_id,
                 text=(
                     f"❌ Account Sell Rejected!\n\n"
                     f"🗂 Platform: {platform}\n"
@@ -261,7 +251,7 @@ async def admin_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     f"⚠️ আবার চেষ্টা করুন অথবা Support Group এ যোগাযোগ করুন।"
                 )
             )
-            await query.edit_message_text("❌ Rejected.")
+            await query.edit_message_text("❌ Rejected & User Notified.")
 
         del PENDING[user_id]
 
@@ -269,10 +259,10 @@ async def admin_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if action == "approve":
             USERS[user_id]["balance"] = 0
             await context.bot.send_message(chat_id=user_id, text="✅ Withdraw Successful!\n💰 Balance: 0৳")
-            await query.edit_message_text("✅ Withdraw Approved.")
+            await query.edit_message_text("✅ Withdraw Approved & User Notified.")
         else:
             await context.bot.send_message(chat_id=user_id, text="❌ Withdraw Rejected.")
-            await query.edit_message_text("❌ Withdraw Rejected.")
+            await query.edit_message_text("❌ Withdraw Rejected & User Notified.")
 
     elif category == "claim":
         USERS[user_id]["balance"] += 20
@@ -315,7 +305,7 @@ def main():
     app.add_handler(wd_conv)
 
     # Admin
-    app.add_handler(CallbackQueryHandler(admin_callback, pattern="^(sell_|wd_|claim_)"))
+    app.add_handler(CallbackQueryHandler(admin_callback, pattern="^(sell|wd|claim)_"))
 
     logger.info("Bot started polling...")
     app.run_polling()
