@@ -96,7 +96,7 @@ async def ask_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return ASK_NUMBER
 
     context.user_data["acc_number"] = number
-    await update.message.reply_text("🔑 আপনার Account Code দিন:", reply_markup=back_only)
+    await update.message.reply_text("🔑 Send OTP:", reply_markup=back_only)
     return ASK_CODE
 
 async def complete_sell(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -129,7 +129,7 @@ async def complete_sell(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=OWNER_ID, text=msg, reply_markup=keyboard)
 
     await update.message.reply_text(
-        "✅ আপনার রিকোয়েস্ট Admin এর কাছে পাঠানো হয়েছে।\n\n👉 নতুন Account দিতে চাইলে আবার নাম্বার লিখুন অথবা ⬅️ Back চাপুন।",
+        "🔃 Processing your request...।\n\n👉 নতুন Account দিতে চাইলে আবার নাম্বার লিখুন অথবা ⬅️ Back চাপুন।",
         reply_markup=back_only
     )
     return ASK_NUMBER
@@ -182,7 +182,7 @@ async def take_withdraw_number(update: Update, context: ContextTypes.DEFAULT_TYP
         f"📲 Number: {number}"
     )
     await context.bot.send_message(chat_id=OWNER_ID, text=msg, reply_markup=keyboard)
-    await update.message.reply_text("✅ আপনার withdraw request Admin এর কাছে পাঠানো হয়েছে।", reply_markup=main_menu)
+    await update.message.reply_text("🔃 withdraw request Processing...", reply_markup=main_menu)
     return ConversationHandler.END
 
 # ===== Admin Callbacks =====
@@ -220,7 +220,7 @@ async def admin_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_id = int(data[2])
         if action == "approve":
             USERS[user_id]["balance"] = 0
-            await context.bot.send_message(chat_id=user_id, text="✅ Withdraw Approved!\n💰 Balance: 0৳")
+            await context.bot.send_message(chat_id=user_id, text="✅ Withdraw Successful!\n💰 Balance: 0৳")
             await query.edit_message_text("✅ Withdraw Approved.")
         else:
             await context.bot.send_message(chat_id=user_id, text="❌ Withdraw Rejected.")
