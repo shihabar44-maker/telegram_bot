@@ -21,7 +21,7 @@ OWNER_ID = 8028396521   # তোমার Numeric Telegram ID এখানে �
 
 # ===== Data Store =====
 USERS = defaultdict(lambda: {"balance": 0})
-PENDING_MESSAGES = {}   # 🔥 user_id -> {"chat_id":..., "msg_id":...}
+PENDING = {}  # user_id -> {chat_id, msg_id, platform, number, code}
 
 # ===== Menus =====
 main_menu = ReplyKeyboardMarkup(
@@ -140,8 +140,8 @@ async def complete_sell(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Send request to admin
     keyboard = InlineKeyboardMarkup(
         [
-            [InlineKeyboardButton("✅ Approve", callback_data=f"sell_approve_{user.id}_{platform}_{number}_{code}")],
-            [InlineKeyboardButton("❌ Reject", callback_data=f"sell_reject_{user.id}_{platform}_{number}_{code}")]
+            [InlineKeyboardButton("✅ Approve", callback_data=f"sell_approve_{user.id}")],
+            [InlineKeyboardButton("❌ Reject", callback_data=f"sell_reject_{user.id}")]
         ]
     )
     msg = (
@@ -158,9 +158,14 @@ async def complete_sell(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=back_only
     )
 
-    # Save pending message globally (not just in user_data)
-    PENDING_MESSAGES[user.id] = {"chat_id": sent.chat_id, "msg_id": sent.message_id}
-
+    # Save pending for admin action
+    PENDING[user.id] = {
+        "chat_id": sent.chat_id,
+        "msg_id": sent.message_id,
+        "platform": platform,
+        "number": number,
+        "code": code,
+    }
     return ASK_NUMBER
 
 # ===== Withdraw Flow =====
@@ -233,42 +238,49 @@ async def admin_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if data[0] == "sell":  # Sell requests
         user_id = int(data[2])
-        platform, number, code = data[3], data[4], data[5]
+        pending = PENDING.get(user_id)
 
-        pending = PENDING_MESSAGES.get(user_id)
+        if not pending:
+            await query.edit_message_text("⚠️ Request expired or not found.")
+            return
+
+        chat_id = pending["chat_id"]
+        msg_id = pending["msg_id"]
+        platform = pending["platform"]
+        number = pending["number"]
+        code = pending["code"]
 
         if action == "approve":
-            if pending:
-                await context.bot.edit_message_text(
-                    chat_id=pending["chat_id"],
-                    message_id=pending["msg_id"],
-                    text=(
-                        f"✅ Account Sell Successful!\n\n"
-                        f"🗂 Platform: {platform}\n"
-                        f"📲 Account: {number}\n"
-                        f"🔑 Code: {code}\n\n"
-                        f"💰 Claim করতে নিচের বাটন চাপুন:"
-                    ),
-                    reply_markup=InlineKeyboardMarkup(
-                        [[InlineKeyboardButton("🎁 Claim 20৳", callback_data=f"claim_{user_id}")]]
-                    )
+            await context.bot.edit_message_text(
+                chat_id=chat_id,
+                message_id=msg_id,
+                text=(
+                    f"✅ Account Sell Successful!\n\n"
+                    f"🗂 Platform: {platform}\n"
+                    f"📲 Account: {number}\n"
+                    f"🔑 Code: {code}\n\n"
+                    f"💰 Claim করতে নিচের বাটন চাপুন:"
+                ),
+                reply_markup=InlineKeyboardMarkup(
+                    [[InlineKeyboardButton("🎁 Claim 20৳", callback_data=f"claim_{user_id}")]]
                 )
+            )
             await query.edit_message_text("✅ Approved & Claim sent.")
-
-        else:  # reject
-            if pending:
-                await context.bot.edit_message_text(
-                    chat_id=pending["chat_id"],
-                    message_id=pending["msg_id"],
-                    text=(
-                        f"❌ Account Sell Rejected!\n\n"
-                        f"🗂 Platform: {platform}\n"
-                        f"📲 Account: {number}\n"
-                        f"🔑 Code: {code}\n\n"
-                        f"⚠️ আবার চেষ্টা করুন অথবা Support Group এ যোগাযোগ করুন।"
-                    )
+        else:
+            await context.bot.edit_message_text(
+                chat_id=chat_id,
+                message_id=msg_id,
+                text=(
+                    f"❌ Account Sell Rejected!\n\n"
+                    f"🗂 Platform: {platform}\n"
+                    f"📲 Account: {number}\n"
+                    f"🔑 Code: {code}\n\n"
+                    f"⚠️ আবার চেষ্টা করুন অথবা Support Group এ যোগাযোগ করুন।"
                 )
+            )
             await query.edit_message_text("❌ Rejected.")
+
+        del PENDING[user_id]
 
     elif data[0] == "wd":  # Withdraw requests
         user_id = int(data[2])
