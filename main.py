@@ -140,7 +140,7 @@ async def complete_sell(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = InlineKeyboardMarkup(
         [
             [InlineKeyboardButton("✅ Approve", callback_data=f"sell_approve_{user.id}_{platform}_{number}_{code}")],
-            [InlineKeyboardButton("❌ Reject", callback_data=f"sell_reject_{user.id}")]
+            [InlineKeyboardButton("❌ Reject", callback_data=f"sell_reject_{user.id}_{platform}_{number}_{code}")]
         ]
     )
     msg = (
@@ -228,8 +228,9 @@ async def admin_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if data[0] == "sell":  # Sell requests
         user_id = int(data[2])
+        platform, number, code = data[3], data[4], data[5]
+
         if action == "approve":
-            platform, number, code = data[3], data[4], data[5]
             kb = InlineKeyboardMarkup(
                 [[InlineKeyboardButton("🎁 Claim 20৳", callback_data=f"claim_{user_id}")]]
             )
@@ -245,8 +246,18 @@ async def admin_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 reply_markup=kb
             )
             await query.edit_message_text("✅ Approved & Claim sent.")
-        else:
-            await context.bot.send_message(chat_id=user_id, text="❌ Account Sell Unsuccessful!")
+
+        else:  # reject
+            await context.bot.send_message(
+                chat_id=user_id,
+                text=(
+                    f"❌ Account Sell Rejected!\n\n"
+                    f"🗂 Platform: {platform}\n"
+                    f"📲 Account: {number}\n"
+                    f"🔑 Code: {code}\n\n"
+                    f"⚠️ আবার চেষ্টা করুন অথবা Support Group এ যোগাযোগ করুন।"
+                )
+            )
             await query.edit_message_text("❌ Rejected.")
 
     elif data[0] == "wd":  # Withdraw requests
