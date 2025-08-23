@@ -229,9 +229,17 @@ async def admin_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
             await query.edit_message_text("✅ Approved & User Notified.")
         else:
+            # এখানে ডিটেইলসসহ রিজেক্ট পাঠানো হচ্ছে
+            message = query.message.text
+            details = "\n".join(message.split("\n")[2:]) if message else ""
+
             await context.bot.send_message(
                 chat_id=user_id,
-                text="❌ Account Sell Unsuccessful !\n⚠️ আবার চেষ্টা করুন অথবা Support Group এ যোগাযোগ করুন।"
+                text=(
+                    f"❌ Account Sell Rejected!\n\n"
+                    f"{details}\n\n"
+                    f"⚠️ আবার চেষ্টা করুন অথবা Support Group এ যোগাযোগ করুন।"
+                )
             )
             await query.edit_message_text("❌ Rejected & User Notified.")
 
