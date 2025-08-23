@@ -188,7 +188,7 @@ async def admin_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     data = query.data.split("_")
     action = data[1]
-    user_id = int(data[2])
+    user_id = int(data[2]) if data[0] in ("sell", "wd") else None
 
     if data[0] == "sell":  # Sell requests
         if action == "approve":
@@ -213,10 +213,15 @@ async def admin_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await context.bot.send_message(chat_id=user_id, text="❌ Withdraw Rejected.")
             await query.edit_message_text("❌ Withdraw Rejected.")
 
-    elif data[0] == "claim":  # Claim button fixed ✅
+    elif data[0] == "claim":  # ✅ Fixed Claim section
+        user_id = int(data[1])  # claim_12345 → user_id = 12345
         USERS[user_id]["balance"] += 20
         bal = USERS[user_id]["balance"]
-        await context.bot.send_message(chat_id=user_id, text=f"🎁 20৳ Claim সফল হয়েছে!\n💰 নতুন Balance: {bal}৳")
+
+        await context.bot.send_message(
+            chat_id=user_id,
+            text=f"🎁 20৳ Claim সফল হয়েছে!\n💰 নতুন Balance: {bal}৳"
+        )
         await query.edit_message_text("🎁 Claimed.")
 
 # ===== Build app =====
