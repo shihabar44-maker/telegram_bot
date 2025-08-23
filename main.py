@@ -199,7 +199,7 @@ async def take_withdraw_number(update: Update, context: ContextTypes.DEFAULT_TYP
         f"📲 Number: {number}"
     )
     await context.bot.send_message(chat_id=OWNER_ID, text=msg, reply_markup=keyboard)
-    await update.message.reply_text("🔃 withdraw request Processing...", reply_markup=main_menu)
+    await update.message.reply_text("🔃 Withdraw Request Pending...", reply_markup=main_menu)
     return ConversationHandler.END
 
 # ===== Admin Callbacks =====
@@ -241,7 +241,7 @@ async def admin_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await context.bot.send_message(chat_id=user_id, text="✅ Withdraw Successful!\n💰 Balance: 0৳")
             await query.edit_message_text("✅ Withdraw Approved & User Notified.")
         else:
-            await context.bot.send_message(chat_id=user_id, text="❌ Withdraw Rejected.")
+            await context.bot.send_message(chat_id=user_id, text="❌ Withdraw Fail.")
             await query.edit_message_text("❌ Withdraw Rejected & User Notified.")
 
 # ===== Claim Callback =====
