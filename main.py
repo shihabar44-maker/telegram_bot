@@ -21,7 +21,7 @@ OWNER_ID = 8028396521   # তোমার Numeric Telegram ID এখানে �
 
 # ===== Data Store =====
 USERS = defaultdict(lambda: {"balance": 0})
-PENDING = {}  # user_id -> {platform, number, code}
+PENDING = {}  # user_id -> {platform, number, code, claimed}
 
 # ===== Menus =====
 main_menu = ReplyKeyboardMarkup(
@@ -151,6 +151,7 @@ async def complete_sell(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "platform": platform,
         "number": number,
         "code": code,
+        "claimed": False
     }
     return ASK_NUMBER
 
@@ -253,8 +254,7 @@ async def admin_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
             await query.edit_message_text("❌ Rejected & User Notified.")
 
-        del PENDING[user_id]
-
+        # keep pending for claim
     elif category == "wd":
         if action == "approve":
             USERS[user_id]["balance"] = 0
@@ -272,13 +272,16 @@ async def claim_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     _, user_id = query.data.split("_")
     user_id = int(user_id)
 
-    # একবার Claim করলে আবার হবে না
-    if query.message.reply_markup is None:
-        await query.edit_message_text("⚠️ Already Claimed.")
+    pending = PENDING.get(user_id)
+    if not pending or pending.get("claimed", False):
+        await query.edit_message_text("⚠️ Already Claimed or Request Not Found.")
         return
 
     USERS[user_id]["balance"] += 20
     bal = USERS[user_id]["balance"]
+
+    # Update claim status
+    PENDING[user_id]["claimed"] = True
 
     await query.edit_message_text("🎁 20৳ Claimed. ✅ (Already added to your balance)")
     await context.bot.send_message(
@@ -327,4 +330,4 @@ def main():
     app.run_polling()
 
 if __name__ == "__main__":
-    main() 
+    main()
