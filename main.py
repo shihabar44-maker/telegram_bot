@@ -1,6 +1,7 @@
 from collections import defaultdict
 import re
 import logging
+import uuid
 from telegram import (
     Update, ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup
 )
@@ -21,7 +22,7 @@ OWNER_ID = 8028396521   # তোমার Numeric Telegram ID এখানে �
 
 # ===== Data Store =====
 USERS = defaultdict(lambda: {"balance": 0})
-PENDING = {}  # user_id -> {platform, number, code, claimed}
+CLAIMS = {}  # claim_id -> {user_id, amount}
 
 # ===== Menus =====
 main_menu = ReplyKeyboardMarkup(
@@ -145,14 +146,6 @@ async def complete_sell(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "🔃 Processing your request...।\n\n👉 নতুন Account দিতে চাইলে আবার নাম্বার লিখুন অথবা ⬅️ Back চাপুন।",
         reply_markup=back_only
     )
-
-    # Save pending
-    PENDING[user.id] = {
-        "platform": platform,
-        "number": number,
-        "code": code,
-        "claimed": False
-    }
     return ASK_NUMBER
 
 # ===== Withdraw Flow =====
@@ -218,43 +211,30 @@ async def admin_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     category, action, user_id = data[0], data[1], int(data[2])
 
     if category == "sell":
-        pending = PENDING.get(user_id)
-        if not pending:
-            await query.edit_message_text("⚠️ Request expired or not found.")
-            return
-
-        platform, number, code = pending["platform"], pending["number"], pending["code"]
-
         if action == "approve":
+            # unique claim_id বানাও
+            claim_id = str(uuid.uuid4())
+            CLAIMS[claim_id] = {"user_id": user_id, "amount": 20}
+
             # user notify
             await context.bot.send_message(
                 chat_id=user_id,
                 text=(
                     f"✅ Account Sell Successful!\n\n"
-                    f"🗂 Platform: {platform}\n"
-                    f"📲 Account: {number}\n"
-                    f"🔑 Code: {code}\n\n"
                     f"💰 Claim করতে নিচের বাটন চাপুন:"
                 ),
                 reply_markup=InlineKeyboardMarkup(
-                    [[InlineKeyboardButton("🎁 Claim 20৳", callback_data=f"claim_{user_id}")]]
+                    [[InlineKeyboardButton("🎁 Claim 20৳", callback_data=f"claim_{user_id}_{claim_id}")]]
                 )
             )
             await query.edit_message_text("✅ Approved & User Notified.")
         else:
             await context.bot.send_message(
                 chat_id=user_id,
-                text=(
-                    f"❌ Account Sell Unsuccessful !\n\n"
-                    f"🗂 Platform: {platform}\n"
-                    f"📲 Account: {number}\n"
-                    f"🔑 Code: {code}\n\n"
-                    f"⚠️ আবার চেষ্টা করুন অথবা Support Group এ যোগাযোগ করুন।"
-                )
+                text="❌ Account Sell Unsuccessful !\n⚠️ আবার চেষ্টা করুন অথবা Support Group এ যোগাযোগ করুন।"
             )
             await query.edit_message_text("❌ Rejected & User Notified.")
 
-        # keep pending for claim
     elif category == "wd":
         if action == "approve":
             USERS[user_id]["balance"] = 0
@@ -269,24 +249,32 @@ async def claim_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
-    _, user_id = query.data.split("_")
+    _, user_id, claim_id = query.data.split("_")
     user_id = int(user_id)
 
-    pending = PENDING.get(user_id)
-    if not pending or pending.get("claimed", False):
-        await query.edit_message_text("⚠️ Already Claimed or Request Not Found.")
+    claim = CLAIMS.pop(claim_id, None)
+    if not claim or claim["user_id"] != user_id:
+        await query.edit_message_text("⚠️ Already Claimed or Invalid Claim.")
         return
 
-    USERS[user_id]["balance"] += 20
+    USERS[user_id]["balance"] += claim["amount"]
     bal = USERS[user_id]["balance"]
 
-    # Update claim status
-    PENDING[user_id]["claimed"] = True
+    # Remove only that button
+    old_keyboard = query.message.reply_markup.inline_keyboard if query.message.reply_markup else []
+    new_keyboard = []
+    for row in old_keyboard:
+        new_row = [btn for btn in row if btn.callback_data != query.data]
+        if new_row:
+            new_keyboard.append(new_row)
 
-    await query.edit_message_text("🎁 20৳ Claimed. ✅ (Already added to your balance)")
+    await query.edit_message_reply_markup(
+        reply_markup=InlineKeyboardMarkup(new_keyboard) if new_keyboard else None
+    )
+
     await context.bot.send_message(
         chat_id=user_id,
-        text=f"🎁 20৳ Claim সফল হয়েছে!\n💰 নতুন Balance: {bal}৳"
+        text=f"🎁 {claim['amount']}৳ Claim সফল হয়েছে!\n💰 নতুন Balance: {bal}৳"
     )
 
 # ===== Build app =====
