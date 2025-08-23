@@ -16,7 +16,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-TOKEN = "YOUR_BOT_TOKEN"
+TOKEN = "8386188290:AAFoWLcvqlk030n1EzHUC2-mJq9vSOSelq0"
 OWNER_ID = 8028396521   # তোমার Numeric Telegram ID এখানে দাও
 
 # ===== Data Store =====
