@@ -128,7 +128,6 @@ async def complete_sell(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     await context.bot.send_message(chat_id=OWNER_ID, text=msg, reply_markup=keyboard)
 
-    # এখানেই Loop এ রাখছি → ইউজার চাইলে আবার নতুন নাম্বার দিতে পারবে
     await update.message.reply_text(
         "✅ আপনার রিকোয়েস্ট Admin এর কাছে পাঠানো হয়েছে।\n\n👉 নতুন Account দিতে চাইলে আবার নাম্বার লিখুন অথবা ⬅️ Back চাপুন।",
         reply_markup=back_only
@@ -193,15 +192,23 @@ async def admin_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     data = query.data.split("_")
     action = data[1]
-    user_id = int(data[2])
 
     if data[0] == "sell":  # Sell requests
+        user_id = int(data[2])
         if action == "approve":
             platform, number, code = data[3], data[4], data[5]
-            kb = InlineKeyboardMarkup([[InlineKeyboardButton("🎁 Claim 20৳", callback_data=f"claim_{user_id}")]])
+            kb = InlineKeyboardMarkup(
+                [[InlineKeyboardButton("🎁 Claim 20৳", callback_data=f"claim_{user_id}")]]
+            )
             await context.bot.send_message(
                 chat_id=user_id,
-                text=f"✅ আপনার Account Sell request Approved!\n\n🗂 Platform: {platform}\n📲 Account: {number}\n🔑 Code: {code}\n\n💰 Claim করতে নিচের বাটন চাপুন:",
+                text=(
+                    f"✅ আপনার Account Sell request Approved!\n\n"
+                    f"🗂 Platform: {platform}\n"
+                    f"📲 Account: {number}\n"
+                    f"🔑 Code: {code}\n\n"
+                    f"💰 Claim করতে নিচের বাটন চাপুন:"
+                ),
                 reply_markup=kb
             )
             await query.edit_message_text("✅ Approved & Claim sent.")
@@ -210,6 +217,7 @@ async def admin_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.edit_message_text("❌ Rejected.")
 
     elif data[0] == "wd":  # Withdraw requests
+        user_id = int(data[2])
         if action == "approve":
             USERS[user_id]["balance"] = 0
             await context.bot.send_message(chat_id=user_id, text="✅ Withdraw Approved!\n💰 Balance: 0৳")
@@ -218,11 +226,17 @@ async def admin_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await context.bot.send_message(chat_id=user_id, text="❌ Withdraw Rejected.")
             await query.edit_message_text("❌ Withdraw Rejected.")
 
-    elif data[0] == "claim":
+    elif data[0] == "claim":  # ✅ Claim Fixed
+        user_id = int(data[1]) if action.isdigit() else int(data[2])
         USERS[user_id]["balance"] += 20
         bal = USERS[user_id]["balance"]
-        await context.bot.send_message(chat_id=user_id, text=f"🎁 20৳ Claim সফল হয়েছে!\n💰 নতুন Balance: {bal}৳")
-        await query.edit_message_text("🎁 Claimed.")
+
+        # disable button after claim
+        await query.edit_message_text("🎁 20৳ Claimed.")
+        await context.bot.send_message(
+            chat_id=user_id,
+            text=f"🎁 20৳ Claim সফল হয়েছে!\n💰 নতুন Balance: {bal}৳"
+        )
 
 # ===== Build app =====
 def main():
