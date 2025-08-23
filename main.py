@@ -215,8 +215,14 @@ async def admin_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
-    data = query.data.split("_")
-    category, action, user_id = data[0], data[1], int(data[2])
+    logger.info(f"Callback Data: {query.data}")  # Debugging log
+
+    try:
+        data = query.data.split("_")
+        category, action, user_id = data[0], data[1], int(data[2])
+    except Exception as e:
+        logger.error(f"Callback parse error: {e}, data={query.data}")
+        return
 
     if category == "sell":
         pending = PENDING.get(user_id)
@@ -309,10 +315,10 @@ def main():
     app.add_handler(wd_conv)
 
     # Admin
-    app.add_handler(CallbackQueryHandler(admin_callback, pattern="^(sell|wd|claim)_"))
+    app.add_handler(CallbackQueryHandler(admin_callback, pattern="^(sell_|wd_|claim_)"))
 
     logger.info("Bot started polling...")
     app.run_polling()
 
 if __name__ == "__main__":
-    main()            
+    main()
