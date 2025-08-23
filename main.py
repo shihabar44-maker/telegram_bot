@@ -70,10 +70,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def show_balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     bal = USERS[user.id]["balance"]
-    await update.message.reply_text(f"💰 আপনার মোট Balance: {bal}৳")
+    await update.message.reply_text(f"💰 Balance: {bal}৳")
 
 async def support_group(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("💬 Support Group: https://t.me/love_ie_fake")
+    await update.message.reply_text("💬 Support Group: https://t.me/love_ie_fake এডমিন এর সাথে যোগাযোগ করতে Send Message এ ক্লিক করুন!")
 
 # ===== Accounts Sell Flow =====
 async def sell_entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -109,7 +109,7 @@ async def ask_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return ASK_NUMBER
 
     context.user_data["acc_number"] = number
-    await update.message.reply_text("🔑 Send OTP:", reply_markup=back_only)
+    await update.message.reply_text("Send OTP:", reply_markup=back_only)
     return ASK_CODE
 
 async def complete_sell(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -244,7 +244,7 @@ async def admin_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await context.bot.send_message(
                 chat_id=user_id,
                 text=(
-                    f"❌ Account Sell Rejected!\n\n"
+                    f"❌ Account Sell Unsuccessful !\n\n"
                     f"🗂 Platform: {platform}\n"
                     f"📲 Account: {number}\n"
                     f"🔑 Code: {code}\n\n"
