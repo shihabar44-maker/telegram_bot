@@ -264,7 +264,7 @@ async def admin_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await context.bot.send_message(chat_id=user_id, text="❌ Withdraw Rejected.")
             await query.edit_message_text("❌ Withdraw Rejected & User Notified.")
 
-# ===== Claim Callback আলাদা =====
+# ===== Claim Callback =====
 async def claim_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -272,10 +272,15 @@ async def claim_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     _, user_id = query.data.split("_")
     user_id = int(user_id)
 
+    # একবার Claim করলে আবার হবে না
+    if query.message.reply_markup is None:
+        await query.edit_message_text("⚠️ Already Claimed.")
+        return
+
     USERS[user_id]["balance"] += 20
     bal = USERS[user_id]["balance"]
 
-    await query.edit_message_text("🎁 20৳ Claimed.")
+    await query.edit_message_text("🎁 20৳ Claimed. ✅ (Already added to your balance)")
     await context.bot.send_message(
         chat_id=user_id,
         text=f"🎁 20৳ Claim সফল হয়েছে!\n💰 নতুন Balance: {bal}৳"
@@ -322,4 +327,4 @@ def main():
     app.run_polling()
 
 if __name__ == "__main__":
-    main()    
+    main() 
