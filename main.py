@@ -264,14 +264,22 @@ async def admin_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await context.bot.send_message(chat_id=user_id, text="❌ Withdraw Rejected.")
             await query.edit_message_text("❌ Withdraw Rejected & User Notified.")
 
-    elif category == "claim":
-        USERS[user_id]["balance"] += 20
-        bal = USERS[user_id]["balance"]
-        await query.edit_message_text("🎁 20৳ Claimed.")
-        await context.bot.send_message(
-            chat_id=user_id,
-            text=f"🎁 20৳ Claim সফল হয়েছে!\n💰 নতুন Balance: {bal}৳"
-        )
+# ===== Claim Callback আলাদা =====
+async def claim_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    _, user_id = query.data.split("_")
+    user_id = int(user_id)
+
+    USERS[user_id]["balance"] += 20
+    bal = USERS[user_id]["balance"]
+
+    await query.edit_message_text("🎁 20৳ Claimed.")
+    await context.bot.send_message(
+        chat_id=user_id,
+        text=f"🎁 20৳ Claim সফল হয়েছে!\n💰 নতুন Balance: {bal}৳"
+    )
 
 # ===== Build app =====
 def main():
@@ -304,11 +312,14 @@ def main():
     )
     app.add_handler(wd_conv)
 
-    # Admin + Claim
-    app.add_handler(CallbackQueryHandler(admin_callback, pattern="^(sell|wd|claim)_"))
+    # Admin Approve/Reject
+    app.add_handler(CallbackQueryHandler(admin_callback, pattern="^(sell|wd)_"))
+
+    # Claim আলাদা
+    app.add_handler(CallbackQueryHandler(claim_callback, pattern="^claim_"))
 
     logger.info("Bot started polling...")
     app.run_polling()
 
 if __name__ == "__main__":
-    main()
+    main()    
