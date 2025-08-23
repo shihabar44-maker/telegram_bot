@@ -61,7 +61,7 @@ async def show_balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(f"💰 আপনার মোট Balance: {bal}৳")
 
 async def support_group(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("💬 Support Group: https://t.me/YourSupportGroup")
+    await update.message.reply_text("💬 Support Group: https://t.me/love_ie_fake")
 
 # ===== Accounts Sell Flow =====
 async def sell_entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -203,7 +203,7 @@ async def admin_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await context.bot.send_message(
                 chat_id=user_id,
                 text=(
-                    f"✅ আপনার Account Sell request Approved!\n\n"
+                    f"✅ Account Sell Successful!\n\n"
                     f"🗂 Platform: {platform}\n"
                     f"📲 Account: {number}\n"
                     f"🔑 Code: {code}\n\n"
@@ -213,7 +213,11 @@ async def admin_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
             await query.edit_message_text("✅ Approved & Claim sent.")
         else:
-            await context.bot.send_message(chat_id=user_id, text="❌ আপনার Sell request Rejected হয়েছে।")
+            await context.bot.send_message(chat_id=user_id, text="
+                    f"❌ Account Sell Unsuccessful!\n\n"
+                    f"🗂 Platform: {platform}\n"
+                    f"📲 Account: {number}\n"
+                    f"🔑 Code: {code}\n\n"")
             await query.edit_message_text("❌ Rejected.")
 
     elif data[0] == "wd":  # Withdraw requests
