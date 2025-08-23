@@ -70,26 +70,19 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def show_balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     bal = USERS[user.id]["balance"]
-    logger.info("User %s (%s) checked balance: %s", user.first_name, user.id, bal)
     await update.message.reply_text(f"💰 আপনার মোট Balance: {bal}৳")
 
 async def support_group(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
-    logger.info("User %s (%s) opened Support Group link", user.first_name, user.id)
     await update.message.reply_text("💬 Support Group: https://t.me/love_ie_fake")
 
 # ===== Accounts Sell Flow =====
 async def sell_entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
-    logger.info("User %s (%s) entered Accounts Sell", user.first_name, user.id)
-    await update.message.reply_text("একটি প্ল্যাটফর্ম বেছে নিন:", reply_markup=sell_menu)
     context.user_data.clear()
+    await update.message.reply_text("একটি প্ল্যাটফর্ম বেছে নিন:", reply_markup=sell_menu)
     return CHOOSE_PLATFORM
 
 async def choose_platform(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
-    user = update.effective_user
-    logger.info("User %s (%s) chose platform: %s", user.first_name, user.id, text)
 
     if text == "📨 Telegram":
         context.user_data["platform"] = "Telegram"
@@ -111,9 +104,6 @@ async def ask_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return CHOOSE_PLATFORM
 
     number = update.message.text.strip()
-    user = update.effective_user
-    logger.info("User %s (%s) entered account number: %s", user.first_name, user.id, number)
-
     if len(number) < 5:
         await update.message.reply_text("❌ বৈধ Account Number দিন:", reply_markup=back_only)
         return ASK_NUMBER
@@ -127,15 +117,13 @@ async def complete_sell(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return await sell_entry(update, context)
 
     code = update.message.text.strip()
-    user = update.effective_user
-    logger.info("User %s (%s) entered OTP code: %s", user.first_name, user.id, code)
-
     if not code.isdigit():
         await update.message.reply_text("❌ Code শুধু সংখ্যা হতে হবে!", reply_markup=back_only)
         return ASK_CODE
 
     platform = context.user_data.get("platform")
     number = context.user_data.get("acc_number")
+    user = update.effective_user
 
     # Send request to admin
     keyboard = InlineKeyboardMarkup(
@@ -158,7 +146,7 @@ async def complete_sell(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=back_only
     )
 
-    # Save pending for admin action
+    # Save pending
     PENDING[user.id] = {
         "chat_id": sent.chat_id,
         "msg_id": sent.message_id,
@@ -172,7 +160,6 @@ async def complete_sell(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def withdraw_entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     bal = USERS[user.id]["balance"]
-    logger.info("User %s (%s) entered Withdraw menu. Balance: %s", user.first_name, user.id, bal)
 
     if bal < 100:
         await update.message.reply_text("⚠️ মিনিমাম 100৳ হলে withdraw করা যাবে।")
@@ -182,8 +169,6 @@ async def withdraw_entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def choose_method(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
-    user = update.effective_user
-    logger.info("User %s (%s) chose withdraw method: %s", user.first_name, user.id, text)
 
     if text == "⬅️ Back":
         return await start(update, context)
@@ -198,11 +183,9 @@ async def choose_method(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def take_withdraw_number(update: Update, context: ContextTypes.DEFAULT_TYPE):
     number = update.message.text.strip()
     user = update.effective_user
-    logger.info("User %s (%s) entered withdraw number: %s", user.first_name, user.id, number)
 
     if number == "⬅️ Back":
         return await withdraw_entry(update, context)
-
     if not is_valid_phone(number):
         await update.message.reply_text("❌ সঠিক নাম্বার দিন! Format: +CountryCodeXXXXXXXX")
         return WD_NUMBER
@@ -233,22 +216,16 @@ async def admin_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
 
     data = query.data.split("_")
-    action = data[1]
-    logger.info("Admin action: %s with data: %s", action, data)
+    category, action, user_id = data[0], data[1], int(data[2])
 
-    if data[0] == "sell":  # Sell requests
-        user_id = int(data[2])
+    if category == "sell":
         pending = PENDING.get(user_id)
-
         if not pending:
             await query.edit_message_text("⚠️ Request expired or not found.")
             return
 
-        chat_id = pending["chat_id"]
-        msg_id = pending["msg_id"]
-        platform = pending["platform"]
-        number = pending["number"]
-        code = pending["code"]
+        chat_id, msg_id = pending["chat_id"], pending["msg_id"]
+        platform, number, code = pending["platform"], pending["number"], pending["code"]
 
         if action == "approve":
             await context.bot.edit_message_text(
@@ -282,8 +259,7 @@ async def admin_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         del PENDING[user_id]
 
-    elif data[0] == "wd":  # Withdraw requests
-        user_id = int(data[2])
+    elif category == "wd":
         if action == "approve":
             USERS[user_id]["balance"] = 0
             await context.bot.send_message(chat_id=user_id, text="✅ Withdraw Successful!\n💰 Balance: 0৳")
@@ -292,11 +268,9 @@ async def admin_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await context.bot.send_message(chat_id=user_id, text="❌ Withdraw Rejected.")
             await query.edit_message_text("❌ Withdraw Rejected.")
 
-    elif data[0] == "claim":  # Claim
-        user_id = int(data[1]) if action.isdigit() else int(data[2])
+    elif category == "claim":
         USERS[user_id]["balance"] += 20
         bal = USERS[user_id]["balance"]
-
         await query.edit_message_text("🎁 20৳ Claimed.")
         await context.bot.send_message(
             chat_id=user_id,
@@ -341,4 +315,4 @@ def main():
     app.run_polling()
 
 if __name__ == "__main__":
-    main()
+    main()            
