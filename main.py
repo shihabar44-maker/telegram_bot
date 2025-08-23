@@ -192,7 +192,6 @@ async def admin_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if data[0] == "sell":  # Sell requests
         if action == "approve":
-            # Claim button to user
             platform, number, code = data[3], data[4], data[5]
             kb = InlineKeyboardMarkup([[InlineKeyboardButton("🎁 Claim 20৳", callback_data=f"claim_{user_id}")]])
             await context.bot.send_message(
@@ -214,7 +213,7 @@ async def admin_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await context.bot.send_message(chat_id=user_id, text="❌ Withdraw Rejected.")
             await query.edit_message_text("❌ Withdraw Rejected.")
 
-    elif data[0] == "claim":
+    elif data[0] == "claim":  # Claim button fixed ✅
         USERS[user_id]["balance"] += 20
         bal = USERS[user_id]["balance"]
         await context.bot.send_message(chat_id=user_id, text=f"🎁 20৳ Claim সফল হয়েছে!\n💰 নতুন Balance: {bal}৳")
