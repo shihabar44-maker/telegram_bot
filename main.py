@@ -67,6 +67,30 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     USERS[user.id]
     await update.message.reply_text("✨ Welcome! Choose an option:", reply_markup=main_menu)
 
+# ===== /active =====
+async def active_users_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    now = datetime.now()
+    active_users = []
+
+    for user_id, u in USERS.items():
+        last_active_str = u.get("last_active")
+        if last_active_str:
+            last_active = datetime.fromisoformat(last_active_str)
+            if now - last_active <= timedelta(hours=24):  # ✅ শেষ ২৪ ঘন্টায় active
+                name = u.get("first_name") or "Unknown"
+                username = f"@{u['username']}" if u.get("username") else ""
+                active_users.append(f"{name} {username}".strip())
+
+    count = len(active_users)
+
+    if count == 0:
+        await update.message.reply_text("❌ গত ২৪ ঘন্টায় কোনো Active ইউজার নেই।")
+    else:
+        user_list = "\n".join(active_users)
+        await update.message.reply_text(
+            f"🟢 গত ২৪ ঘন্টায় Active ইউজার: {count}\n\n{user_list}"
+        )
+
 # ===== Static =====
 async def show_balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
@@ -314,6 +338,8 @@ def main():
         },
         fallbacks=[MessageHandler(filters.Regex("^⬅️ Back$"), withdraw_entry)],
     )
+    # ===== /active Handler =====
+app.add_handler(CommandHandler("active", active_users_command))
     app.add_handler(wd_conv)
 
     # Admin Approve/Reject
