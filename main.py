@@ -2,6 +2,7 @@ from collections import defaultdict
 import re
 import logging
 import uuid
+from datetime import datetime, timedelta   # ✅ দরকার ছিল
 from telegram import (
     Update, ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup
 )
@@ -18,10 +19,10 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 TOKEN = "7890244767:AAE4HRfDjhyLce4feEaK_YCgFaJbVHi_2nA"
-OWNER_ID = 8028396521   # তোমার Numeric Telegram ID এখানে দাও
+OWNER_ID = 8028396521  # তোমার Numeric Telegram ID
 
 # ===== Data Store =====
-USERS = defaultdict(lambda: {"balance": 0})
+USERS = defaultdict(lambda: {"balance": 0, "last_active": None})
 CLAIMS = {}  # claim_id -> {user_id, amount}
 
 # ===== Menus =====
@@ -60,11 +61,20 @@ def is_valid_phone(number: str) -> bool:
     pattern = r'^\+\d{7,15}$'
     return re.match(pattern, number) is not None
 
+# ===== Global last_active updater =====
+async def update_last_active(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    if not user:
+        return
+    USERS[user.id]["username"] = user.username
+    USERS[user.id]["first_name"] = user.first_name
+    USERS[user.id]["last_active"] = datetime.now().isoformat()
+
 # ===== /start =====
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     logger.info("User %s (%s) started the bot.", user.first_name, user.id)
-    USERS[user.id]
+    USERS[user.id]  # ensure user entry
     await update.message.reply_text("✨ Welcome! Choose an option:", reply_markup=main_menu)
 
 # ===== /active =====
@@ -236,11 +246,9 @@ async def admin_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if category == "sell":
         if action == "approve":
-            # unique claim_id বানাও
             claim_id = str(uuid.uuid4())
             CLAIMS[claim_id] = {"user_id": user_id, "amount": 20}
 
-            # user notify
             await context.bot.send_message(
                 chat_id=user_id,
                 text=(
@@ -253,17 +261,11 @@ async def admin_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
             await query.edit_message_text("✅ Approved & User Notified.")
         else:
-            # এখানে ডিটেইলসসহ রিজেক্ট পাঠানো হচ্ছে
             message = query.message.text
             details = "\n".join(message.split("\n")[2:]) if message else ""
-
             await context.bot.send_message(
                 chat_id=user_id,
-                text=(
-                    f"❌ Account Sell Rejected!\n\n"
-                    f"{details}\n\n"
-                    f"⚠️ আবার চেষ্টা করুন অথবা Support Group এ যোগাযোগ করুন।"
-                )
+                text=f"❌ Account Sell Rejected!\n\n{details}\n\n⚠️ আবার চেষ্টা করুন অথবা Support Group এ যোগাযোগ করুন।"
             )
             await query.edit_message_text("❌ Rejected & User Notified.")
 
@@ -292,7 +294,6 @@ async def claim_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     USERS[user_id]["balance"] += claim["amount"]
     bal = USERS[user_id]["balance"]
 
-    # Remove only that button
     old_keyboard = query.message.reply_markup.inline_keyboard if query.message.reply_markup else []
     new_keyboard = []
     for row in old_keyboard:
@@ -313,7 +314,12 @@ async def claim_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def main():
     app = Application.builder().token(TOKEN).build()
 
+    # Global user activity tracker
+    app.add_handler(MessageHandler(filters.ALL, update_last_active), group=0)
+    app.add_handler(CallbackQueryHandler(update_last_active), group=0)
+
     app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("active", active_users_command))
     app.add_handler(MessageHandler(filters.Regex("^💰 My Balance$"), show_balance))
     app.add_handler(MessageHandler(filters.Regex("^💬 Support Group$"), support_group))
 
@@ -338,14 +344,12 @@ def main():
         },
         fallbacks=[MessageHandler(filters.Regex("^⬅️ Back$"), withdraw_entry)],
     )
-    # ===== /active Handler =====
-app.add_handler(CommandHandler("active", active_users_command))
     app.add_handler(wd_conv)
 
     # Admin Approve/Reject
     app.add_handler(CallbackQueryHandler(admin_callback, pattern="^(sell|wd)_"))
 
-    # Claim আলাদা
+    # Claim
     app.add_handler(CallbackQueryHandler(claim_callback, pattern="^claim_"))
 
     logger.info("Bot started polling...")
