@@ -1,24 +1,4 @@
-# -*- coding: utf-8 -*-
-"""
-Telegram Bot (Bangla) — Full Run Code (5 Features)
-==================================================
-
-Included features:
-1) SQLite Database (permanent storage)
-2) Referral System (/start <ref>, /refer)
-3) Anti-Spam / Security (rate limit)
-4) Premium System (VIP users; claim reward multiplier)
-5) Multi-Admin Support (roles: owner/admin/helper)
-
-Removed/Not included:
-- Daily Bonus ❌
-- Auto Payment Gateway ❌
-
-python-telegram-bot >= 20
-"""
-
 from __future__ import annotations
-
 import logging
 import os
 import re
