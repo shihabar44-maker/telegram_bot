@@ -6,7 +6,7 @@ from telegram.ext import Application, CommandHandler, ContextTypes
 BOT_TOKEN = "7890244767:AAE4HRfDjhyLce4feEaK_YCgFaJbVHi_2nA"
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("✅ Bot ঠিকমতো চলছেgjdjgdjgsjsjgsjgsgjdjgskgdkgdkhdkhdkgdgkdkhdkhdkhdmhdmhdhmdkhdkhdhkdhkdkhdkhdkhdkhdhkfhkdhkfkhfkhdhkdgjdjgdgjdkhdgjdjgdkhdkhd okay !")
+    await update.message.reply_text("✅ Bot ঠিকমতো চলছে okay  !")
 
 def main():
     app = Application.builder().token(BOT_TOKEN).build()
