@@ -19,7 +19,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 TOKEN = "7890244767:AAE4HRfDjhyLce4feEaK_YCgFaJbVHi_2nA"
-OWNER_ID = 7890244767:AAE4HRfDjhyLce4feEaK_YCgFaJbVHi_2nA  # তোমার Numeric Telegram ID
+OWNER_ID = 8028396521  # তোমার Numeric Telegram ID
 
 # ===== Data Store =====
 USERS = defaultdict(lambda: {"balance": 0, "last_active": None})
