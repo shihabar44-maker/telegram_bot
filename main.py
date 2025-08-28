@@ -2,7 +2,7 @@ from collections import defaultdict
 import re
 import logging
 import uuid
-from datetime import datetime, timedelta   # ✅ দরকার ছিল
+from datetime import datetime, timedelta
 from telegram import (
     Update, ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup
 )
@@ -19,7 +19,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 TOKEN = "7890244767:AAE4HRfDjhyLce4feEaK_YCgFaJbVHi_2nA"
-OWNER_ID = 8028396521  # তোমার Numeric Telegram ID
+OWNER_ID = 7890244767:AAE4HRfDjhyLce4feEaK_YCgFaJbVHi_2nA  # তোমার Numeric Telegram ID
 
 # ===== Data Store =====
 USERS = defaultdict(lambda: {"balance": 0, "last_active": None})
@@ -73,7 +73,6 @@ async def update_last_active(update: Update, context: ContextTypes.DEFAULT_TYPE)
 # ===== /start =====
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
-    logger.info("User %s (%s) started the bot.", user.first_name, user.id)
     USERS[user.id]  # ensure user entry
     await update.message.reply_text("✨ Welcome! Choose an option:", reply_markup=main_menu)
 
@@ -86,7 +85,7 @@ async def active_users_command(update: Update, context: ContextTypes.DEFAULT_TYP
         last_active_str = u.get("last_active")
         if last_active_str:
             last_active = datetime.fromisoformat(last_active_str)
-            if now - last_active <= timedelta(hours=24):  # ✅ শেষ ২৪ ঘন্টায় active
+            if now - last_active <= timedelta(hours=24):
                 name = u.get("first_name") or "Unknown"
                 username = f"@{u['username']}" if u.get("username") else ""
                 active_users.append(f"{name} {username}".strip())
@@ -108,7 +107,7 @@ async def show_balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(f"💰 Balance: {bal}৳")
 
 async def support_group(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("💬 Support Group: https://t.me/love_ie_fake এডমিন এর সাথে যোগাযোগ করতে Send Message এ ক্লিক করুন!")
+    await update.message.reply_text("💬 Support Group: https://t.me/your_group")
 
 # ===== Accounts Sell Flow =====
 async def sell_entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -177,7 +176,7 @@ async def complete_sell(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=OWNER_ID, text=msg, reply_markup=keyboard)
 
     await update.message.reply_text(
-        "🔃 Processing your request...।\n\n👉 নতুন Account দিতে চাইলে আবার নাম্বার লিখুন অথবা ⬅️ Back চাপুন।",
+        "🔃 Processing your request...\n\n👉 নতুন Account দিতে চাইলে আবার নাম্বার লিখুন অথবা ⬅️ Back চাপুন।",
         reply_markup=back_only
     )
     return ASK_NUMBER
@@ -251,22 +250,14 @@ async def admin_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             await context.bot.send_message(
                 chat_id=user_id,
-                text=(
-                    f"✅ Account Sell Successful!\n\n"
-                    f"💰 Claim করতে নিচের বাটন চাপুন:"
-                ),
+                text="✅ Account Sell Successful!\n\n💰 Claim করতে নিচের বাটন চাপুন:",
                 reply_markup=InlineKeyboardMarkup(
                     [[InlineKeyboardButton("🎁 Claim 20৳", callback_data=f"claim_{user_id}_{claim_id}")]]
                 )
             )
             await query.edit_message_text("✅ Approved & User Notified.")
         else:
-            message = query.message.text
-            details = "\n".join(message.split("\n")[2:]) if message else ""
-            await context.bot.send_message(
-                chat_id=user_id,
-                text=f"❌ Account Sell Rejected!\n\n{details}\n\n⚠️ আবার চেষ্টা করুন অথবা Support Group এ যোগাযোগ করুন।"
-            )
+            await context.bot.send_message(chat_id=user_id, text="❌ Account Sell Rejected!")
             await query.edit_message_text("❌ Rejected & User Notified.")
 
     elif category == "wd":
@@ -294,6 +285,7 @@ async def claim_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     USERS[user_id]["balance"] += claim["amount"]
     bal = USERS[user_id]["balance"]
 
+    # Remove claim button
     old_keyboard = query.message.reply_markup.inline_keyboard if query.message.reply_markup else []
     new_keyboard = []
     for row in old_keyboard:
