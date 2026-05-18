@@ -2,7 +2,7 @@ import telebot
 import google.generativeai as genai
 
 # তোমার টোকেন এবং এপিআই কী এখানে বসাও
-BOT_TOKEN = "8994577792:AAG00RCLPOBvPATFArRCekhXPouLJ5NI3Sw"
+BOT_TOKEN = "8994577792:AAGCJ0tvIbTud9P125XUxPugaz6PfRFgxHo"
 GEMINI_API_KEY = "AIzaSyAZUZfNfUnxD5mRkd7ODfIiR75KBEbt58s"
 
 # জেমিনি এআই কনফিগারেশন (নতুন নিয়ম)
