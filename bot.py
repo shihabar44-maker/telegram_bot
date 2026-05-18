@@ -25,7 +25,7 @@ BOT_TOKEN = "8994577792:AAGCJ0tvIbTud9P125XUxPugaz6PfRFgxHo"
 GEMINI_API_KEY = "AIzaSyAZUZfNfUnxD5mRkd7ODfIiR75KBEbt58s"
 
 genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel("gemini-1.5-flash")
+model = genai.GenerativeModel("gemini-2.5-flash")
 
 bot = telebot.TeleBot(BOT_TOKEN)
 
